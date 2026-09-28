@@ -53,7 +53,7 @@ export default function Dashboard() {
 
         if (modalLogTab === 'runtime') {
           // Fetch Pod Runtime Logs
-          const res = await fetch(`${baseUrl}/api/pod-logs/${logViewerProject.app_name}?lines=200`);
+          const res = await fetch(`/api/pod-logs/${encodeURIComponent(logViewerProject.app_name)}?lines=200`);
           if (!res.ok) return false;
           const data = await res.json();
           if (data.status === 'success') {
@@ -67,7 +67,7 @@ export default function Dashboard() {
         }
 
         // Fetch Build Logs
-        const res = await fetch(`${baseUrl}/api/logs/${logViewerProject.app_name}`);
+        const res = await fetch(`/api/logs/${encodeURIComponent(logViewerProject.app_name)}`);
         if (!res.ok) return false;
         const data = await res.json();
         

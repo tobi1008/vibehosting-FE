@@ -119,7 +119,7 @@ export default function ProjectDetailPage({
     const fetchBuildLogs = async () => {
       try {
         const queryName = targetAppName || appName;
-        const res = await fetch(`${baseUrl}/api/logs/${queryName}`);
+        const res = await fetch(`/api/logs/${encodeURIComponent(queryName)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (isSubscribed && data.logs) {
@@ -168,9 +168,9 @@ export default function ProjectDetailPage({
     for (const cand of candidates) {
       try {
         const [resBe, resFe, resDirect] = await Promise.all([
-          fetch(`${baseUrl}/api/pod-logs/${cand}?lines=10&component=be`),
-          fetch(`${baseUrl}/api/pod-logs/${cand}?lines=10&component=fe`),
-          fetch(`${baseUrl}/api/pod-logs/${cand}?lines=10`),
+          fetch(`/api/pod-logs/${encodeURIComponent(cand)}?lines=10&component=be`),
+          fetch(`/api/pod-logs/${encodeURIComponent(cand)}?lines=10&component=fe`),
+          fetch(`/api/pod-logs/${encodeURIComponent(cand)}?lines=10`),
         ]);
 
         const [dataBe, dataFe, dataDirect] = await Promise.all([
@@ -207,8 +207,8 @@ export default function ProjectDetailPage({
 
       if (isFullstack && podComponent === 'all') {
         const [resBe, resFe] = await Promise.all([
-          fetch(`${baseUrl}/api/pod-logs/${nameToUse}?lines=${linesCount}&component=be`),
-          fetch(`${baseUrl}/api/pod-logs/${nameToUse}?lines=${linesCount}&component=fe`),
+          fetch(`/api/pod-logs/${encodeURIComponent(nameToUse)}?lines=${linesCount}&component=be`),
+          fetch(`/api/pod-logs/${encodeURIComponent(nameToUse)}?lines=${linesCount}&component=fe`),
         ]);
         const dataBe = resBe.ok ? await resBe.json() : null;
         const dataFe = resFe.ok ? await resFe.json() : null;
@@ -246,7 +246,7 @@ export default function ProjectDetailPage({
       }
 
       const compQuery = podComponent !== 'all' ? `&component=${podComponent}` : '';
-      const res = await fetch(`${baseUrl}/api/pod-logs/${nameToUse}?lines=${linesCount}${compQuery}`);
+      const res = await fetch(`/api/pod-logs/${encodeURIComponent(nameToUse)}?lines=${linesCount}${compQuery}`);
       if (!res.ok) {
         setPodStatus('error');
         return false;

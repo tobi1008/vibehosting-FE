@@ -361,9 +361,7 @@ export default function NewProject() {
       logIntervalRef.current = null;
     }
 
-    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://116.118.50.199:8080/api/deploy";
-    const baseUrl = rawApiUrl.replace(/\/api\/deploy\/?$/, "");
-    const logsUrl = `${baseUrl}/api/logs/${targetAppName}`;
+    const logsUrl = `/api/logs/${encodeURIComponent(targetAppName)}`;
 
     const pollLogs = async () => {
       try {
