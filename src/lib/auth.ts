@@ -37,7 +37,7 @@ async function ensureAdminUser() {
       where: { username: "admin" }
     });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash("123", 10);
+      const hashedPassword = await bcrypt.hash("***REMOVED***", 10);
       await prisma.user.create({
         data: {
           username: "admin",
@@ -47,7 +47,7 @@ async function ensureAdminUser() {
           role: "admin"
         }
       });
-      console.log("Seeded default admin user (admin / 123)");
+      console.log("Seeded default admin user (admin / ***REMOVED***)");
     }
   } catch (err) {
     console.error("Error ensuring default admin user:", err);
@@ -103,29 +103,71 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        await ensureAdminUser();
+        // Ưu tiên 1: Đảm bảo tài khoản admin luôn đăng nhập được trên mọi môi trường (kể cả Vercel SQLite / serverless)
+        const isMasterAdmin =
+          credentials.username === "admin" &&
+          (credentials.password === (process.env.ADMIN_PASSWORD || "***REMOVED***"));
 
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username }
-        });
+        if (isMasterAdmin) {
+          try {
+            await ensureAdminUser();
+            const dbAdmin = await prisma.user.findUnique({
+              where: { username: "admin" }
+            });
+            if (dbAdmin) {
+              return {
+                id: dbAdmin.id,
+                name: dbAdmin.name || "Admin User",
+                email: dbAdmin.email || "admin@vibehosting.com",
+                role: dbAdmin.role || "admin",
+                isImpersonating: false,
+                originalAdminId: null,
+              };
+            }
+          } catch (e) {
+            console.warn("DB inaccessible or read-only, using fallback admin session:", e);
+          }
 
-        if (!user) {
-          return null;
+          // Fallback static admin session nếu SQLite DB trên serverless không khả dụng
+          return {
+            id: "cmty1olh30001o40tjgq8otd8",
+            name: "Admin User",
+            email: "admin@vibehosting.com",
+            role: "admin",
+            isImpersonating: false,
+            originalAdminId: null,
+          };
         }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordValid) {
+        // Case 3: Các user khác xác thực qua DB
+        try {
+          await ensureAdminUser();
+
+          const user = await prisma.user.findUnique({
+            where: { username: credentials.username }
+          });
+
+          if (!user) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name || user.username,
+            email: user.email || `${user.username}@vibehosting.com`,
+            role: user.role,
+            isImpersonating: false,
+            originalAdminId: null,
+          };
+        } catch (dbError) {
+          console.error("Database authentication error:", dbError);
           return null;
         }
-
-        return {
-          id: user.id,
-          name: user.name || user.username,
-          email: user.email || `${user.username}@vibehosting.com`,
-          role: user.role,
-          isImpersonating: false,
-          originalAdminId: null,
-        };
       }
     })
   ],
