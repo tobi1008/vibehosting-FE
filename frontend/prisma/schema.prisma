@@ -1,0 +1,42 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  username       String    @unique
+  name           String?
+  email          String?   @unique
+  password       String
+  role           String    @default("user")
+  githubToken    String?
+  githubUsername String?
+  githubAvatar   String?
+  projects       Project[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  app_name    String
+  repo_url    String
+  app_domain  String
+  status      String   @default("deploying")
+  arch_type   String?  @default("web_only")
+  db_type     String?
+  be_repo_url String?
+  fe_repo_url String?
+  be_domain   String?
+  fe_domain   String?
+  auto_cicd   Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

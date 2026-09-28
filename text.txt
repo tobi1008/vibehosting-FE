@@ -1,0 +1,33 @@
+Bạn là một Expert Frontend Engineer chuyên về React, Next.js (App Router), Tailwind CSS và Framer Motion. 
+Nhiệm vụ của bạn là xây dựng Web Dashboard cho nền tảng PaaS "Vibe Hosting" (một hệ thống giống Vercel/Railway).
+
+YÊU CẦU KỸ THUẬT & GIAO DIỆN:
+1. **Tech Stack**: Next.js (App Router), TypeScript, Tailwind CSS, Lucide React (cho icon).
+2. **Giao diện (UI/UX)**: 
+   - Phong cách tối giản, hiện đại, dark mode mặc định, lấy cảm hứng từ Vercel. 
+   - Có Sidebar bên trái chứa các menu: "Overview", "Projects", "Settings".
+   - Màn hình chính (Overview/Projects) hiển thị danh sách các dự án đã deploy dưới dạng Grid Card.
+   - Nút "New Project" nổi bật ở góc trên bên phải.
+
+3. **Luồng tính năng "Deploy New Project" (Cốt lõi)**:
+   - Khi bấm "New Project", mở ra một form nhập liệu gọn gàng.
+   - Form gồm 3 trường thông tin:
+     + `repo_url` (Input: Link GitHub Repository).
+     + `app_name` (Input: Tên dự án, auto-slugify, ví dụ: "My App" -> "my-app").
+     + `app_domain` (Input: Tên miền). Cung cấp một nút toggle hoặc radio button để chọn: "Dùng subdomain hệ thống (*.vibe.quyenlt.com)" hoặc "Custom Domain". Nếu chọn subdomain hệ thống, tự động điền `app_domain` = `{app_name}.vibe.quyenlt.com`.
+   - Khi bấm submit form, gọi API (HTTP POST) tới Backend.
+
+4. **Tích hợp API Backend**:
+   - URL API Backend: `http://116.118.50.199:8080/api/deploy` (Sử dụng biến môi trường `NEXT_PUBLIC_API_URL` để dễ cấu hình, fallback về địa chỉ này).
+   - Payload JSON gửi đi: `{ "repo_url": "...", "app_name": "...", "app_domain": "..." }`.
+   - Xử lý trạng thái: Hiển thị loading spinner/toast notification khi đang gửi request. Khi nhận được phản hồi (status 200), hiển thị thông báo thành công chứa link URL và chuyển hướng người dùng về trang danh sách dự án.
+
+5. **Lưu trữ dữ liệu tạm (Mock Data)**:
+   - Vì chưa có Database thật ở Frontend, hãy dùng React Context hoặc LocalStorage để lưu trạng thái danh sách các dự án (app_name, repo_url, app_domain, status: "deploying" | "active").
+   - Khi API trả về thành công, thêm dự án đó vào danh sách với status "deploying".
+
+YÊU CẦU THỰC THI CHO AI:
+- Sinh cấu trúc thư mục rõ ràng (components, app, lib, types).
+- Viết code hoàn chỉnh cho `app/page.tsx` (Dashboard chính), `app/new/page.tsx` (Form tạo project).
+- Đảm bảo code clean, có xử lý lỗi (error handling) khi gọi API thất bại.
+- Thiết kế UI đẹp ngay từ lần chạy đầu tiên, không cần tôi phải chỉnh sửa CSS thủ công.
