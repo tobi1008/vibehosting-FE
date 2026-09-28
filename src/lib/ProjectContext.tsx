@@ -258,7 +258,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     const reconcileDeploying = async () => {
       for (const p of deployingProjects) {
         try {
-          const res = await fetch(`${baseUrl}/api/logs/${p.app_name}`);
+          const res = await fetch(`/api/logs/${encodeURIComponent(p.app_name)}`);
           if (!res.ok) continue;
           const data = await res.json();
           if (data.logs) {

@@ -103,9 +103,7 @@ export default function Dashboard() {
     ]);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://116.118.50.199:8080/api/deploy";
-      const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
-      const response = await fetch(`${baseUrl}/api/apps/${encodeURIComponent(project.app_name)}`, {
+      const response = await fetch(`/api/apps/${encodeURIComponent(project.app_name)}`, {
         method: 'DELETE',
       });
       

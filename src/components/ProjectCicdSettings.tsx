@@ -68,8 +68,7 @@ export function ProjectCicdSettings({
           setHasGithubToken(data.hasGithubToken);
         }
       } else {
-        // Fallback directly to backend if Next API route fails
-        const directRes = await fetch(`${baseUrl}/api/apps/${appName}/config`);
+        const directRes = await fetch(`/api/apps/${encodeURIComponent(appName)}/config`);
         if (directRes.ok) {
           const directData = await directRes.json();
           const state = directData?.data?.auto_cicd ?? directData?.auto_cicd ?? false;
@@ -133,7 +132,7 @@ export function ProjectCicdSettings({
     setIsRedeploying(true);
 
     try {
-      const res = await fetch(`${baseUrl}/api/apps/${appName}/redeploy`, {
+      const res = await fetch(`/api/apps/${encodeURIComponent(appName)}/redeploy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

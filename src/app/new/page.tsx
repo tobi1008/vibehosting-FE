@@ -582,7 +582,7 @@ export default function NewProject() {
           monorepoPayload.github_token = githubToken.trim();
         }
 
-        response = await fetch(`${baseUrl}/api/deploy-monorepo`, {
+        response = await fetch(`/api/deploy-monorepo`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -601,7 +601,7 @@ export default function NewProject() {
         if (dbFile) formData.append("backup_file", dbFile);
         if (githubToken) formData.append("github_token", githubToken);
 
-        response = await fetch(`${baseUrl}/api/deploy-fullstack`, {
+        response = await fetch(`/api/deploy-fullstack`, {
           method: "POST",
           body: formData,
         });
@@ -615,7 +615,7 @@ export default function NewProject() {
         if (dbFile) formData.append("backup_file", dbFile);
         if (githubToken) formData.append("github_token", githubToken);
 
-        response = await fetch(`${baseUrl}/api/deploy-with-db`, {
+        response = await fetch(`/api/deploy-with-db`, {
           method: "POST",
           body: formData,
         });
@@ -636,7 +636,7 @@ export default function NewProject() {
           payload.github_token = githubToken;
         }
 
-        response = await fetch(`${baseUrl}/api/deploy`, {
+        response = await fetch(`/api/deploy`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -699,8 +699,7 @@ export default function NewProject() {
         auto_cicd: false,
       });
 
-      // Đảm bảo cấu hình backend của dự án mới mặc định auto_cicd = false
-      fetch(`${baseUrl}/api/apps/${slugifiedName}/config`, {
+      fetch(`/api/apps/${encodeURIComponent(slugifiedName)}/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ auto_cicd: false }),
