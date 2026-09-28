@@ -453,6 +453,34 @@ export default function ProfilePage() {
             ) : (
               /* Connect Form */
               <div className="mt-4 flex flex-col gap-4">
+                {/* 1-Click GitHub OAuth Connect Button */}
+                <div className="p-4 bg-muted/40 border border-border/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <GithubIcon className="w-4 h-4" />
+                      Kết nối trực tiếp qua GitHub (1-Click OAuth)
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Bấm nút để ủy quyền cho Vibe Hosting tự động nạp repositories mà không cần tạo token thủ công.
+                    </p>
+                  </div>
+                  <a
+                    href="/api/user/github/connect?returnTo=/profile"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#24292e] hover:bg-[#1b1f23] text-white font-medium text-xs rounded-lg transition-all shadow-sm active:scale-95 shrink-0 border border-[#444d56]"
+                  >
+                    <GithubIcon className="w-4 h-4" />
+                    <span>Connect with GitHub</span>
+                  </a>
+                </div>
+
+                <div className="relative flex items-center justify-center my-1">
+                  <div className="border-t border-border w-full"></div>
+                  <span className="bg-background px-3 text-[11px] text-muted-foreground uppercase tracking-wider shrink-0">
+                    hoặc nhập Personal Access Token thủ công
+                  </span>
+                  <div className="border-t border-border w-full"></div>
+                </div>
+
                 <div className="bg-muted/30 border border-border/80 rounded-lg p-4 text-xs text-muted-foreground space-y-2">
                   <p className="font-semibold text-foreground text-sm flex items-center gap-1.5">
                     <KeyRound className="w-4 h-4 text-foreground" />

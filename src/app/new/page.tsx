@@ -38,6 +38,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
 
+function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+    </svg>
+  );
+}
+
 export type DatabaseType = "mysql" | "mariadb" | "postgresql" | "mongodb" | "redis";
 
 export interface DatabaseOption {
@@ -126,8 +134,8 @@ export default function NewProject() {
   const [appName, setAppName] = useState("");
   const [domainType, setDomainType] = useState<"system" | "custom">("system");
   const [customDomain, setCustomDomain] = useState("");
-  const [systemSubdomain, setSystemSubdomain] = useState("");
   const [randomSubdomain, setRandomSubdomain] = useState("");
+  const [isPrivateRepo, setIsPrivateRepo] = useState<boolean>(false);
 
   // Architecture & Database state
   const [archType, setArchType] = useState<"web_only" | "web_db" | "fullstack" | "monorepo">("web_only");
@@ -297,6 +305,7 @@ export default function NewProject() {
   };
 
   const selectRepo = (repo: any) => {
+    setIsPrivateRepo(Boolean(repo.private));
     if (archType === "fullstack") {
       if (activeRepoTarget === "be") {
         setBeRepoUrl(repo.clone_url);
@@ -566,7 +575,7 @@ export default function NewProject() {
           monorepoPayload.fe_domain = finalFeDomain.trim();
         }
 
-        if (githubToken && githubToken.trim()) {
+        if (isPrivateRepo && githubToken && githubToken.trim()) {
           monorepoPayload.github_token = githubToken.trim();
         }
 
@@ -587,7 +596,7 @@ export default function NewProject() {
         formData.append("fe_domain", finalFeDomain.trim());
         formData.append("db_type", selectedDb);
         if (dbFile) formData.append("backup_file", dbFile);
-        if (githubToken) formData.append("github_token", githubToken);
+        if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
         response = await fetch(`/api/deploy-fullstack`, {
           method: "POST",
@@ -601,7 +610,7 @@ export default function NewProject() {
         formData.append("app_domain", finalDomain);
         formData.append("db_type", selectedDb);
         if (dbFile) formData.append("backup_file", dbFile);
-        if (githubToken) formData.append("github_token", githubToken);
+        if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
         response = await fetch(`/api/deploy-with-db`, {
           method: "POST",
@@ -620,7 +629,7 @@ export default function NewProject() {
           app_domain: finalDomain,
         };
 
-        if (githubToken) {
+        if (isPrivateRepo && githubToken) {
           payload.github_token = githubToken;
         }
 
@@ -852,6 +861,15 @@ export default function NewProject() {
                           </div>
                         </>
                       )}
+
+                      {/* 1-Click Connect with GitHub */}
+                      <a
+                        href="/api/user/github/connect?returnTo=/new"
+                        className="inline-flex items-center justify-center gap-2 w-full max-w-xs px-4 py-2.5 bg-[#24292e] hover:bg-[#1b1f23] text-white font-medium text-xs rounded-lg transition-all shadow-sm active:scale-95 border border-[#444d56]"
+                      >
+                        <GithubIcon className="w-4 h-4" />
+                        <span>Connect with GitHub (1-Click)</span>
+                      </a>
 
                       {/* Quick PAT input right on /new page */}
                       <div className="w-full max-w-sm mt-1">
@@ -1570,12 +1588,19 @@ export default function NewProject() {
                         required
                       />
                       {isGithubConnected && (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                          <span className="text-emerald-400 font-bold">✓</span>
-                          <span>
-                            Tự động sử dụng GitHub Token {githubUsername ? `@${githubUsername}` : "đã kết nối"} để xác thực và clone nếu repository ở chế độ Private.
+                        <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isPrivateRepo}
+                            onChange={(e) => setIsPrivateRepo(e.target.checked)}
+                            className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5"
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {isPrivateRepo
+                              ? "🔒 Repository riêng tư (Private) - Gửi kèm token để máy chủ clone"
+                              : "🌐 Repository công khai (Public) - Không gửi token (Bảo mật tối đa)"}
                           </span>
-                        </p>
+                        </label>
                       )}
                     </div>
 
