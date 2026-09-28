@@ -134,6 +134,7 @@ export default function NewProject() {
   const [appName, setAppName] = useState("");
   const [domainType, setDomainType] = useState<"system" | "custom">("system");
   const [customDomain, setCustomDomain] = useState("");
+  const [systemSubdomain, setSystemSubdomain] = useState("");
   const [randomSubdomain, setRandomSubdomain] = useState("");
   const [isPrivateRepo, setIsPrivateRepo] = useState<boolean>(false);
 
