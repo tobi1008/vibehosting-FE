@@ -384,21 +384,9 @@ export default function NewProject() {
             logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
           });
 
-          const upperLogs = data.logs.toUpperCase();
-          const isDone = data.logs.includes("DONE") || 
-                         upperLogs.includes("HOÀN TẤT") || 
-                         upperLogs.includes("SUCCESSFULLY DEPLOYED");
-          const isFailed = !isDone && (
-            (upperLogs.includes("ERROR") && 
-             !upperLogs.includes("0 ERROR") && 
-             !upperLogs.includes("ERRORS: 0") && 
-             !upperLogs.includes("0 ERRORS")) || 
-            upperLogs.includes("FAILED") || 
-            upperLogs.includes("THẤT BẠI") ||
-            upperLogs.includes("FATAL:")
-          );
+          const parsed = parseDeploymentSession(data.logs);
 
-          if (isDone) {
+          if (parsed.status === "active") {
             if (logIntervalRef.current) {
               clearInterval(logIntervalRef.current);
               logIntervalRef.current = null;
@@ -415,7 +403,7 @@ export default function NewProject() {
               url: finalUrl,
             });
             updateProjectStatus(targetAppName, "active");
-          } else if (isFailed) {
+          } else if (parsed.status === "failed") {
             if (logIntervalRef.current) {
               clearInterval(logIntervalRef.current);
               logIntervalRef.current = null;

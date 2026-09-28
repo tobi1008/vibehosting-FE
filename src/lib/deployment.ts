@@ -99,13 +99,18 @@ export function parseDeploymentSession(rawLogsOrSession: string | string[]): Par
   );
 
   // Failure conditions:
-  // 1. Last non-empty line is "ERROR"
-  // 2. Fatal error encountered
-  // 3. Docker/Maven failed and terminated with ERROR
+  // 1. Last non-empty line is "ERROR" or terminal failure signal
+  // 2. Fatal error encountered or [LỖI NGHIÊM TRỌNG]
+  const upperLastLine = lastLine.toUpperCase();
   const isFailed =
-    lastLine === "ERROR" ||
-    lines.some((l) => l.includes("[LỖI NGHIÊM TRỌNG]")) ||
-    (lines.some((l) => l.includes("Error: Docker build failed")) && lastLine === "ERROR");
+    !isSuccess &&
+    (lastLine === "ERROR" ||
+      upperLastLine.startsWith("ERROR:") ||
+      upperLastLine.startsWith("FATAL:") ||
+      upperLastLine === "FAILED" ||
+      upperLastLine.includes("DEPLOYMENT FAILED") ||
+      lines.some((l) => l.includes("[LỖI NGHIÊM TRỌNG]") || l.includes("=== [THẤT BẠI]")) ||
+      (lines.some((l) => l.includes("Error: Docker build failed")) && lastLine === "ERROR"));
 
   if (isSuccess) {
     return { status: "active", sessionLines: lines };
