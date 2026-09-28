@@ -55,6 +55,7 @@ async function ensureAdminUser() {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "***REMOVED***",
   providers: [
     CredentialsProvider({
       name: "Credentials",
