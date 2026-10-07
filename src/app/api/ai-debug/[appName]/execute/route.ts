@@ -143,7 +143,7 @@ export async function POST(
             } else if (existing) {
               content = existing;
             } else {
-              content = `// Updated by Hermes Agent for ${filePath}\n`;
+              content = `// Updated by AI DevOps Agent for ${filePath}\n`;
             }
           }
 

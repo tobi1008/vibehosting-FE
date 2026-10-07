@@ -59,7 +59,7 @@ export interface ProcessLog {
   id: string;
   time: string;
   text: string;
-  type: 'hermes' | 'k8s' | 'info' | 'warn' | 'success' | 'error';
+  type: 'agent' | 'hermes' | 'k8s' | 'info' | 'warn' | 'success' | 'error';
 }
 
 export interface ChatHistoryItem {
@@ -77,7 +77,7 @@ const ANALYSIS_STAGES = [
   { id: 1, label: 'Kết nối K3s & Pod' },
   { id: 2, label: 'Đọc Runtime Logs' },
   { id: 3, label: 'Quét Environment' },
-  { id: 4, label: 'Hermes AI Reasoning' },
+  { id: 4, label: 'AI DevOps Agent Reasoning' },
   { id: 5, label: 'Sinh Action Items' },
 ];
 
@@ -115,13 +115,13 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     {
       id: 'init-1',
       time: 'READY',
-      text: `[HERMES-AGENT] Hermes Autonomous Diagnostic Terminal v2.6 sẵn sàng cho '${appName}'.`,
-      type: 'hermes',
+      text: `[AI-DEVOPS-AGENT] AI DevOps Agent Autonomous Diagnostic Terminal v2.6 sẵn sàng cho '${appName}'.`,
+      type: 'agent',
     },
     {
       id: 'init-2',
       time: 'K3S',
-      text: `[CLUSTER] Cụm Kubernetes K3s: Đã kết nối. Bấm [⚡ Hermes Phân tích sự cố] để quét lỗi hoặc mở [Khung Chat] để thảo luận.`,
+      text: `[CLUSTER] Cụm Kubernetes K3s: Đã kết nối. Bấm [⚡ AI DevOps Agent Phân tích sự cố] để quét lỗi hoặc mở [Khung Chat] để thảo luận.`,
       type: 'k8s',
     },
   ]);
@@ -132,7 +132,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
     {
       role: 'assistant',
-      content: `Xin chào! Mình là Hermes, trợ lý DevOps & AI SRE phụ trách ứng dụng **${appName}**.\n\nMỗi khi bạn nhắn tin, mình sẽ **tự động đọc lại log Pod mới nhất trên cụm Kubernetes** để giải thích cặn kẽ nguyên nhân và thảo luận cùng bạn trước khi áp dụng các thay đổi.\n\nBạn đang gặp vấn đề gì hoặc muốn mình kiểm tra phần nào?`,
+      content: `Xin chào! Mình là AI DevOps Agent, trợ lý DevOps & AI SRE phụ trách ứng dụng **${appName}**.\n\nMỗi khi bạn nhắn tin, mình sẽ **tự động đọc lại log Pod mới nhất trên cụm Kubernetes** để giải thích cặn kẽ nguyên nhân và thảo luận cùng bạn trước khi áp dụng các thay đổi.\n\nBạn đang gặp vấn đề gì hoặc muốn mình kiểm tra phần nào?`,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -172,7 +172,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     logTimersRef.current = [];
   };
 
-  // Trigger Hermes Analysis (/api/ai-debug/analyze)
+  // Trigger AI DevOps Agent Analysis (/api/ai-debug/analyze)
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -185,7 +185,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     setProcessLogs([]);
     setCurrentStage(1);
 
-    addLog(`[HERMES-AGENT] Bắt đầu phiên chẩn đoán tự động cho ứng dụng '${appName}' (target: ${component.toUpperCase()})...`, 'hermes');
+    addLog(`[AI-DEVOPS-AGENT] Bắt đầu phiên chẩn đoán tự động cho ứng dụng '${appName}' (target: ${component.toUpperCase()})...`, 'agent');
 
     const timer1 = setTimeout(() => {
       setCurrentStage(1);
@@ -208,7 +208,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
     const timer4 = setTimeout(() => {
       setCurrentStage(4);
-      addLog(`[HERMES-REASONER] Bắt đầu mô hình suy luận: đối chiếu mã nguồn, cấu hình CORS, Prisma migrations, Port mapping...`, 'hermes');
+      addLog(`[AI-DEVOPS-AGENT-REASONER] Bắt đầu mô hình suy luận: đối chiếu mã nguồn, cấu hình CORS, Prisma migrations, Port mapping...`, 'agent');
       addLog(`[AST-ANALYZER] Quét stack traces và các ngoại lệ kết nối...`, 'info');
     }, 10000);
 
@@ -230,12 +230,12 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
       clearLogTimers();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Hermes Agent không thể phân tích ứng dụng');
+        throw new Error(data.error || 'AI DevOps Agent không thể phân tích ứng dụng');
       }
 
       setCurrentStage(5);
-      addLog(`[HERMES-AGENT] Hoàn tất chẩn đoán! Nguyên nhân cốt lõi xác định: ${data.root_cause || 'DETECTED'}`, 'success');
-      addLog(`[HERMES-AGENT] Đã tạo ${data.actions?.length || 0} hành động khắc phục sẵn sàng thực thi.`, 'success');
+      addLog(`[AI-DEVOPS-AGENT] Hoàn tất chẩn đoán! Nguyên nhân cốt lõi xác định: ${data.root_cause || 'DETECTED'}`, 'success');
+      addLog(`[AI-DEVOPS-AGENT] Đã tạo ${data.actions?.length || 0} hành động khắc phục sẵn sàng thực thi.`, 'success');
 
       setAnalysis(data);
 
@@ -313,7 +313,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     setIsExecuting(true);
     setExecutionError(null);
 
-    addLog(`[HERMES-AGENT] Bắt đầu thực thi ${actionsToExecute.length} hành động đã chọn lên cụm K8s...`, 'hermes');
+    addLog(`[AI-DEVOPS-AGENT] Bắt đầu thực thi ${actionsToExecute.length} hành động đã chọn lên cụm K8s...`, 'agent');
     actionsToExecute.forEach((act, i) => {
       addLog(`  -> [Action #${i + 1}] (${act.action_type}) ${act.description}`, 'info');
     });
@@ -346,7 +346,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
       const results = data.results || [];
       setExecutionResults(results);
 
-      addLog(`[HERMES-AGENT] Hoàn tất thực thi ${results.length} hành động trên cụm K8s!`, 'success');
+      addLog(`[AI-DEVOPS-AGENT] Hoàn tất thực thi ${results.length} hành động trên cụm K8s!`, 'success');
       results.forEach((r: any, idx: number) => {
         const itemResult = r.result || {};
         const isSuccess = itemResult.status === 'success' || r.status === 'success' || itemResult.success === true;
@@ -394,12 +394,12 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Hermes Chat phản hồi không thành công');
+        throw new Error(data.error || 'AI DevOps Agent Chat phản hồi không thành công');
       }
 
       const assistantMsg: ChatHistoryItem = {
         role: 'assistant',
-        content: data.reply || data.message || 'Không nhận được nội dung trả lời từ Hermes.',
+        content: data.reply || data.message || 'Không nhận được nội dung trả lời từ AI DevOps Agent.',
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -407,7 +407,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     } catch (err: any) {
       const errorMsg: ChatHistoryItem = {
         role: 'assistant',
-        content: `❌ Lỗi khi kết nối với Hermes Agent: ${err?.message || 'Vui lòng kiểm tra lại kết nối mạng.'}`,
+        content: `❌ Lỗi khi kết nối với AI DevOps Agent: ${err?.message || 'Vui lòng kiểm tra lại kết nối mạng.'}`,
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       };
       setChatHistory([...updatedHistory, errorMsg]);
@@ -488,6 +488,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
   const getLogTextColor = (type: ProcessLog['type']) => {
     switch (type) {
+      case 'agent':
       case 'hermes':
         return 'text-indigo-400 font-medium';
       case 'k8s':
@@ -537,7 +538,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Khung Chat với Hermes</span>
+            <span>Khung Chat với AI DevOps Agent</span>
             <span className="ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               Live K8s
             </span>
@@ -600,7 +601,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-                    Hermes Autonomous Diagnostic Dashboard
+                    AI DevOps Agent Autonomous Diagnostic Dashboard
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 font-mono">
                       Root Cause & Actions
                     </span>
@@ -678,12 +679,12 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Hermes đang phân tích cụm K3s...</span>
+                      <span>AI DevOps Agent đang phân tích cụm K3s...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>⚡ Hermes Phân tích sự cố</span>
+                      <span>⚡ AI DevOps Agent Phân tích sự cố</span>
                     </>
                   )}
                 </button>
@@ -708,7 +709,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
                   </div>
                   <span className="text-zinc-400 text-[11px] font-semibold pl-2">
-                    hermes-agent-console:~$ k8s-autonomous-diag --app={appName}
+                    ai-devops-agent-console:~$ k8s-autonomous-diag --app={appName}
                   </span>
                 </div>
 
@@ -773,7 +774,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                 {isAnalyzing && (
                   <div className="flex items-center gap-2 text-indigo-400 pt-1">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span className="animate-pulse">Hermes Agent đang phân tích các luồng dữ liệu...</span>
+                    <span className="animate-pulse">AI DevOps Agent đang phân tích các luồng dữ liệu...</span>
                   </div>
                 )}
                 {isExecuting && (
@@ -792,7 +793,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 flex items-start gap-3">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="font-semibold block">Lỗi phân tích từ Hermes Agent:</span>
+                <span className="font-semibold block">Lỗi phân tích từ AI DevOps Agent:</span>
                 <span className="opacity-90">{analysisError}</span>
               </div>
             </div>
@@ -857,7 +858,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                         Danh sách hành động đề xuất ({analysis.actions?.length || 0})
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Chọn các hành động bạn muốn Hermes Agent tự động thực thi trực tiếp trên cụm K3s.
+                        Chọn các hành động bạn muốn AI DevOps Agent tự động thực thi trực tiếp trên cụm K3s.
                       </p>
                     </div>
 
@@ -1003,7 +1004,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                         {isExecuting ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Hermes đang thực thi trên cụm K3s...</span>
+                            <span>AI DevOps Agent đang thực thi trên cụm K3s...</span>
                           </>
                         ) : (
                           <>
@@ -1044,7 +1045,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                             Kết quả thực thi tự phục hồi (Execution Results)
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            Hermes Agent đã hoàn tất thực thi các hành động trên cụm Kubernetes.
+                            AI DevOps Agent đã hoàn tất thực thi các hành động trên cụm Kubernetes.
                           </p>
                         </div>
                       </div>
@@ -1101,7 +1102,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: KHUNG CHAT VỚI HERMES (Gọi POST /api/ai-debug/chat kèm history)      */}
+      {/* TAB 2: KHUNG CHAT VỚI AI DEVOPS AGENT (Gọi POST /api/ai-debug/chat kèm history) */}
       {/* ========================================================================= */}
       {activeSubTab === 'chat' && (
         <div className="flex flex-col h-[680px] bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-in fade-in duration-200">
@@ -1113,7 +1114,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-foreground">Hermes Agent Chat Assistant</span>
+                  <span className="text-xs font-semibold text-foreground">AI DevOps Agent Chat Assistant</span>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Online" />
                 </div>
                 <span className="text-[11px] text-muted-foreground font-mono">
@@ -1159,7 +1160,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                   >
                     <div className="flex items-center justify-between gap-4 text-[10px] pb-1 border-b border-foreground/10 opacity-75">
                       <span className="font-semibold">
-                        {isUser ? 'Bạn' : 'Hermes Agent'}
+                        {isUser ? 'Bạn' : 'AI DevOps Agent'}
                       </span>
                       {item.timestamp && <span>{item.timestamp}</span>}
                     </div>
@@ -1187,7 +1188,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                 <div className="bg-card border border-border rounded-2xl rounded-tl-xs p-3.5 text-xs text-muted-foreground flex items-center gap-2 shadow-xs">
                   <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
                   <span className="text-foreground font-medium animate-pulse">
-                    Hermes đang đọc log Pod mới nhất và suy luận câu trả lời...
+                    AI DevOps Agent đang đọc log Pod mới nhất và suy luận câu trả lời...
                   </span>
                 </div>
               </div>
@@ -1228,7 +1229,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Hỏi Hermes về log, nguyên nhân lỗi, cách sửa hoặc thảo luận chi tiết... (Enter để gửi)"
+                placeholder="Hỏi AI DevOps Agent về log, nguyên nhân lỗi, cách sửa hoặc thảo luận chi tiết... (Enter để gửi)"
                 disabled={isChatLoading}
                 className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-indigo-500/80 transition-colors disabled:opacity-50 shadow-inner"
               />

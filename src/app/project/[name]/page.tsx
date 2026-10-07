@@ -656,7 +656,7 @@ export default function ProjectDetailPage({
           <Sparkles className="w-4 h-4 text-amber-400" />
           <span>AI Debug</span>
           <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
-            Hermes
+            AI DevOps Agent
           </span>
         </button>
 
@@ -753,7 +753,7 @@ export default function ProjectDetailPage({
           </motion.div>
         )}
 
-        {/* TAB 0.5: AI DEBUG & AUTO-HEAL (HERMES AGENT) */}
+        {/* TAB 0.5: AI DEBUG & AUTO-HEAL (AI DEVOPS AGENT) */}
         {activeTab === 'ai-debug' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -1405,7 +1405,7 @@ export default function ProjectDetailPage({
                     className="flex items-center gap-2 p-3 rounded-lg border border-border hover:bg-muted text-xs font-medium text-foreground transition-colors group"
                   >
                     <Sparkles className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                    <span>Hermes AI Chẩn đoán & Tự phục hồi</span>
+                    <span>AI DevOps Agent Chẩn đoán & Tự phục hồi</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('code-editor')}

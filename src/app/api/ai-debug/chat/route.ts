@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             data?.detail ||
             data?.message ||
             data?.error ||
-            `Lỗi từ Hermes Chat (${backendRes.status})`,
+            `Lỗi từ AI DevOps Agent Chat (${backendRes.status})`,
         },
         { status: backendRes.status }
       );
@@ -58,9 +58,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Failed to chat with Hermes Agent:', error);
+    console.error('Failed to chat with AI DevOps Agent:', error);
     return NextResponse.json(
-      { error: error?.message || 'Không thể kết nối đến dịch vụ Hermes Chat' },
+      { error: error?.message || 'Không thể kết nối đến dịch vụ AI DevOps Agent Chat' },
       { status: 500 }
     );
   }

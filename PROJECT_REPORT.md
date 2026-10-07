@@ -1,5 +1,5 @@
 # 📑 BÁO CÁO TOÀN DIỆN DỰ ÁN VIBE HOSTING
-### Cloud IDE, Nền Tảng Triển Khai Ứng Dụng Đa Kiến Trúc & Trợ Lý DevOps Tự Phục Hồi AI (Hermes Agent)
+### Cloud IDE, Nền Tảng Triển Khai Ứng Dụng Đa Kiến Trúc & Trợ Lý DevOps Tự Phục Hồi AI (AI DevOps Agent)
 
 ---
 
@@ -13,7 +13,7 @@
    - [3.4 Phân Hệ Trang Chủ & Quản Lý Dự Án (Dashboard)](#34-phân-hệ-trang-chủ--quản-lý-dự-án-dashboard)
    - [3.5 Phân Hệ Trình Quản Lý File & Monaco Code Editor](#35-phân-hệ-trình-quản-lý-file--monaco-code-editor)
    - [3.6 Phân Hệ Đẩy Mã Nguồn Lên GitHub Cá Nhân (Smart Push)](#36-phân-hệ-đẩy-mã-nguồn-lên-github-cá-nhân-smart-push)
-   - [3.7 Phân Hệ AI Debug & Tự Phục Hồi (Hermes Agent - Dual Workflow)](#37-phân-hệ-ai-debug--tự-phục-hồi-hermes-agent---dual-workflow)
+   - [3.7 Phân Hệ AI Debug & Tự Phục Hồi (AI DevOps Agent - Dual Workflow)](#37-phân-hệ-ai-debug--tự-phục-hồi-ai-devops-agent---dual-workflow)
    - [3.8 Phân Hệ Giám Sát Log Thời Gian Thực (Logs Monitoring)](#38-phân-hệ-giám-sát-log-thời-gian-thực-logs-monitoring)
    - [3.9 Phân Hệ Cấu Hình & Tự Động Hóa CI/CD](#39-phân-hệ-cấu-hình--tự-động-hóa-cicd)
    - [3.10 Phân Hệ Lịch Sử Triển Khai & Khôi Phục (Deploy History & Rollback)](#310-phân-hệ-lịch-sử-triển-khai--khôi-phục-deploy-history--rollback)
@@ -24,7 +24,7 @@
 
 ## 1. TỔNG QUAN DỰ ÁN & CÔNG NGHỆ
 
-**Vibe Hosting** là nền tảng điện toán đám mây PaaS (Platform as a Service) thế hệ mới, kết hợp trải nghiệm của **Vercel** (triển khai nhanh), **Replit** (Cloud IDE Monaco chỉnh sửa code trực tiếp), **Portainer / K8s Dashboard** (giám sát Container Runtime Logs) và **Hermes AI Agent** (trợ lý DevOps tự động chẩn đoán lỗi, đọc log Pod và sinh mã sửa lỗi tự động).
+**Vibe Hosting** là nền tảng điện toán đám mây PaaS (Platform as a Service) thế hệ mới, kết hợp trải nghiệm của **Vercel** (triển khai nhanh), **Replit** (Cloud IDE Monaco chỉnh sửa code trực tiếp), **Portainer / K8s Dashboard** (giám sát Container Runtime Logs) và **AI DevOps Agent** (trợ lý DevOps tự động chẩn đoán lỗi, đọc log Pod và sinh mã sửa lỗi tự động).
 
 ### 🛠️ Tech Stack Chi Tiết:
 - **Frontend Core**: Next.js 15 (App Router), React 19, TypeScript.
@@ -71,7 +71,7 @@
 │ ┌────────────────────┴─────────────────────┐ │
 │ │      K3S / KUBERNETES CLUSTER            │ │
 │ │  - User App Pods (Frontend, Backend, DB) │ │
-│ │  - Hermes Debug & Patching Agent         │ │
+│ │  - AI DevOps Debug & Patching Agent     │ │
 │ └──────────────────────────────────────────┘ │
 └──────────────────────────────────────────────┘
 ```
@@ -267,7 +267,7 @@ Tùy vào chế độ kiến trúc được chọn, Frontend gọi các endpoint
 
 ---
 
-### 3.7 Phân Hệ AI Debug & Tự Phục Hồi (Hermes Agent - Dual Workflow)
+### 3.7 Phân Hệ AI Debug & Tự Phục Hồi (AI DevOps Agent - Dual Workflow)
 
 **Đường dẫn**: `/project/[name]` (Tab `AI Debug & Tự phục hồi`)  
 **Component**: [AiDebugTab.tsx](file:///Users/tobi/devops/vibehosting/frontend/src/components/AiDebug/AiDebugTab.tsx)
@@ -277,19 +277,19 @@ Hệ thống AI Debug được xây dựng với kiến trúc **Dual-Workflow** 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │  AI DEBUG & TỰ PHỤC HỒI                                                │
-│  [📊 Dashboard Chẩn đoán & Sửa lỗi]    [💬 Khung Chat với Hermes (Mới)] │
+│  [📊 Dashboard Chẩn đoán & Sửa lỗi]    [💬 Khung Chat với AI DevOps Agent (Mới)] │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### 1. Phân hệ 1: Dashboard Chẩn đoán & Danh sách Action
-- **Kích hoạt chẩn đoán**: Người dùng chọn Component (`be` / `fe`), có thể nhập ghi chú mô tả triệu chứng lỗi (tùy chọn) và bấm `[⚡ Hermes Phân tích sự cố]`.
+- **Kích hoạt chẩn đoán**: Người dùng chọn Component (`be` / `fe`), có thể nhập ghi chú mô tả triệu chứng lỗi (tùy chọn) và bấm `[⚡ AI DevOps Agent Phân tích sự cố]`.
 - **API Chẩn đoán**: Gọi `POST /api/ai-debug/analyze`:
   - Request Body: `{ "app_name": "3tshop", "component": "be", "user_note": "...", "auto_apply": false }`
-- **Live Terminal Console (hermes-agent@k3s)**: Hiển thị 5 bước tự động:
+- **Live Terminal Console (ai-devops-agent@k3s)**: Hiển thị 5 bước tự động:
   1. Kết nối K3s & Pod
   2. Đọc Runtime Logs
   3. Quét Environment
-  4. Hermes AI Reasoning
+  4. AI DevOps Agent Reasoning
   5. Sinh Action Items
 - **Thẻ Chẩn đoán (Diagnosis Card)**:
   - Badge màu đỏ đậm hiển thị mã nguyên nhân gốc: `root_cause` (vd: `CORS_CONFIG_MISSING`, `PORT_MISMATCH`).
@@ -305,7 +305,7 @@ Hệ thống AI Debug được xây dựng với kiến trúc **Dual-Workflow** 
   - Hiển thị kết quả thực thi và output terminal từng bước.
 - **Nút chuyển nhanh**: *"💬 Hỏi cặn kẽ trong Khung Chat"* giúp chuyển sang Tab 2 mà không làm mất dữ liệu chẩn đoán hiện tại.
 
-#### 2. Phân hệ 2: Khung Chat với Hermes (Đàm thoại & Thảo luận)
+#### 2. Phân hệ 2: Khung Chat với AI DevOps Agent (Đàm thoại & Thảo luận)
 - **Mục đích**: Người dùng có thể chất vấn, hỏi cặn kẽ nguyên nhân vì sao lỗi xảy ra, tại sao lại phải sửa file đó trước khi quyết định bấm Action.
 - **API Đàm thoại**: Gọi `POST /api/ai-debug/chat`:
   - Request Body:
@@ -328,7 +328,7 @@ Hệ thống AI Debug được xây dựng với kiến trúc **Dual-Workflow** 
     }
     ```
 - **Điểm mạnh kỹ thuật**:
-  - **Dynamic Pod Log Context**: Mỗi lần người dùng gửi tin nhắn, Hermes phía Backend ngầm đọc lại Pod log mới nhất từ K8s để đưa ra nhận định chính xác theo thời gian thực.
+  - **Dynamic Pod Log Context**: Mỗi lần người dùng gửi tin nhắn, AI DevOps Agent phía Backend ngầm đọc lại Pod log mới nhất từ K8s để đưa ra nhận định chính xác theo thời gian thực.
   - **Giữ nguyên trạng thái (State Preservation)**: Chat liên tục qua lại mà không gây reload trang hay mất danh sách hành động ở Dashboard.
   - **Quick Suggestion Chips**: Bấm hỏi nhanh các câu hỏi mẫu (CORS, CrashLoopBackOff, giải thích diff, đọc lại log).
   - **Action Reminder Banner**: Hiển thị banner nhắc nhở quay lại Dashboard thực thi khi đã có giải pháp.
@@ -420,8 +420,8 @@ Hệ thống AI Debug được xây dựng với kiến trúc **Dual-Workflow** 
 | **22** | File | `GET` | `/api/project/{name}/file` | `src/components/FileManager/CodeEditorTab.tsx` | Query: `?path={filePath}` | Đọc nội dung file văn bản trong mã nguồn |
 | **23** | File | `PUT` | `/api/project/{name}/file` | `src/components/FileManager/CodeEditorTab.tsx` | Body: `{ path, content }` | Lưu đè nội dung file sau khi chỉnh sửa |
 | **24** | Git | `POST` | `/api/project/{name}/github/push` | `PushToGithubModal.tsx` | Body: `{ githubToken, commitMessage, component... }` | Đẩy mã nguồn trực tiếp lên GitHub cá nhân |
-| **25** | AI Debug | `POST` | `/api/ai-debug/analyze` | `src/components/AiDebug/AiDebugTab.tsx` | Body: `{ app_name, component, user_note }` | Hermes phân tích lỗi K8s và sinh Action Items |
-| **26** | AI Debug | `POST` | `/api/ai-debug/chat` | `src/components/AiDebug/AiDebugTab.tsx` | Body: `{ app_name, component, message, history }` | Chat đàm thoại với Hermes, đọc log mới nhất |
+| **25** | AI Debug | `POST` | `/api/ai-debug/analyze` | `src/components/AiDebug/AiDebugTab.tsx` | Body: `{ app_name, component, user_note }` | AI DevOps Agent phân tích lỗi K8s và sinh Action Items |
+| **26** | AI Debug | `POST` | `/api/ai-debug/chat` | `src/components/AiDebug/AiDebugTab.tsx` | Body: `{ app_name, component, message, history }` | Chat đàm thoại với AI DevOps Agent, đọc log mới nhất |
 | **27** | AI Debug | `POST` | `/api/ai-debug/{appName}/execute` | `src/components/AiDebug/AiDebugTab.tsx` | Body: `{ actions: [...] }` | Thực thi các hành động sửa lỗi đã chọn lên K8s |
 | **28** | CI/CD | `GET` | `/api/projects/{name}/cicd` | `src/components/ProjectCicdSettings.tsx` | Không | Lấy cấu hình biến môi trường & nhánh git |
 | **29** | CI/CD | `POST` | `/api/projects/{name}/cicd` | `src/components/ProjectCicdSettings.tsx` | Body: `{ envVars: { ... }, branch, autoDeploy }` | Cập nhật cấu hình biến môi trường và CI/CD |

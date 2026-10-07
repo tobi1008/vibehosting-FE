@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     if (!backendRes.ok) {
       return NextResponse.json(
-        { error: data.detail || data.message || 'Lỗi khi phân tích từ Hermes Agent' },
+        { error: data.detail || data.message || 'Lỗi khi phân tích từ AI DevOps Agent' },
         { status: backendRes.status }
       );
     }
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Failed to analyze with AI Debug:', error);
     return NextResponse.json(
-      { error: error?.message || 'Không thể kết nối đến dịch vụ Hermes Agent' },
+      { error: error?.message || 'Không thể kết nối đến dịch vụ AI DevOps Agent' },
       { status: 500 }
     );
   }
