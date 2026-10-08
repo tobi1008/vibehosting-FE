@@ -28,7 +28,7 @@ export async function GET(
     }
 
     const { name: appName } = await context.params;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // Get backend config
@@ -135,7 +135,7 @@ export async function POST(
       return NextResponse.json({ error: 'auto_cicd must be a boolean' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
     const targetWebhookUrl = `${baseUrl}/api/webhooks/github/${appName}`;
 

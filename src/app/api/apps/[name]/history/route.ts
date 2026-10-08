@@ -18,7 +18,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const component = searchParams.get('component');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     let targetUrl = `${baseUrl}/api/apps/${encodeURIComponent(appName)}/history`;

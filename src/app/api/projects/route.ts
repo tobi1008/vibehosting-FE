@@ -137,7 +137,7 @@ export async function POST(req: Request) {
 
       // Default auto_cicd to false on backend config for newly created projects
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://116.118.50.199:8080/api/deploy";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
         const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
         fetch(`${baseUrl}/api/apps/${app_name}/config`, {
           method: "POST",

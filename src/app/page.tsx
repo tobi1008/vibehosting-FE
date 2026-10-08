@@ -48,7 +48,7 @@ export default function Dashboard() {
 
     const fetchLogs = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://116.118.50.199:8080/api/deploy";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
         const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
 
         if (modalLogTab === 'runtime') {

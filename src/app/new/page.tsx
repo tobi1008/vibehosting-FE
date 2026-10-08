@@ -48,9 +48,9 @@ function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-export type DatabaseType = "mysql" | "mariadb" | "postgresql" | "mongodb" | "redis";
+type DatabaseType = "mysql" | "mariadb" | "postgresql" | "mongodb" | "redis";
 
-export interface DatabaseOption {
+interface DatabaseOption {
   id: DatabaseType;
   name: string;
   tag: string;
@@ -61,7 +61,7 @@ export interface DatabaseOption {
   fileHint: string;
 }
 
-export const DATABASE_OPTIONS: DatabaseOption[] = [
+const DATABASE_OPTIONS: DatabaseOption[] = [
   {
     id: "mysql",
     name: "MySQL",
@@ -565,7 +565,7 @@ export default function NewProject() {
       "> Đang gửi yêu cầu khởi tạo đến máy chủ...",
     ]);
 
-    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://116.118.50.199:8080/api/deploy";
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
     const baseUrl = rawApiUrl.replace(/\/api\/deploy\/?$/, "");
 
     try {
@@ -745,7 +745,7 @@ export default function NewProject() {
         error?.message?.includes("connect ECONNREFUSED");
 
       const displayError = isNetworkError
-        ? "NetworkError: Không thể kết nối tới server Backend (http://116.118.50.199:8080). Vui lòng kiểm tra lại dịch vụ backend API hoặc mạng kết nối."
+        ? "NetworkError: Không thể kết nối tới server Backend (https://api.quyenlt.com). Vui lòng kiểm tra lại dịch vụ backend API hoặc mạng kết nối."
         : error.message || "Failed to submit deployment.";
 
       setLogs(prev => [...prev, `> ❌ Request failed: ${displayError}`]);

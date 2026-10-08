@@ -18,7 +18,7 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const { component, revision } = body;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     const backendRes = await fetch(`${baseUrl}/api/apps/${encodeURIComponent(appName)}/rollback`, {

@@ -52,7 +52,7 @@ export async function POST(
     const body = await req.json();
     const { actions = [] } = body;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // Normalize actions so backend receives required path and content for edit_file

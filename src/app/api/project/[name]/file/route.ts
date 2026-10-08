@@ -32,7 +32,7 @@ export async function GET(
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // 1. Check if file is currently staged / modified in memory
@@ -44,7 +44,7 @@ export async function GET(
       });
     }
 
-    // 2. Try proxying to remote backend (http://116.118.50.199:8080/api/...)
+    // 2. Try proxying to remote backend (https://api.quyenlt.com/api/...)
     try {
       let backendRes = await fetch(
         `${baseUrl}/api/project/${appName}/file?path=${encodeURIComponent(filePath)}`,
@@ -165,7 +165,7 @@ export async function PUT(
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // 1. Save in staged memory cache

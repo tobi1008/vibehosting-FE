@@ -66,10 +66,10 @@ export async function GET(
 ) {
   try {
     const { name: appName } = await context.params;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
-    // 1. Try to proxy to remote backend endpoint first (http://116.118.50.199:8080/api/...)
+    // 1. Try to proxy to remote backend endpoint first (https://api.quyenlt.com/api/...)
     try {
       let backendRes = await fetch(`${baseUrl}/api/project/${appName}/files`, { cache: 'no-store' });
       if (!backendRes.ok && backendRes.status === 404) {

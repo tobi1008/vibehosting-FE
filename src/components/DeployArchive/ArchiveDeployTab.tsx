@@ -258,9 +258,11 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
     formData.append("app_name", slugifiedName);
     formData.append("app_domain", finalDomain);
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
+    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
     const targetUrl = withDatabase
-      ? "/api/deploy-archive-with-db"
-      : "/api/deploy-archive";
+      ? `${baseUrl}/api/deploy-archive-with-db`
+      : `${baseUrl}/api/deploy-archive`;
 
     if (withDatabase) {
       formData.append("db_type", selectedDb);

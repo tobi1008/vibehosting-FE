@@ -114,7 +114,7 @@ export default function ProjectDetailPage({
     if (activeTab !== 'build-logs') return;
 
     let isSubscribed = true;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     const fetchBuildLogs = async () => {
@@ -151,7 +151,7 @@ export default function ProjectDetailPage({
 
   // Scan available active pods in K8s to suggest / auto-recover
   const scanAvailablePods = async (baseName: string): Promise<string | null> => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     const candidates = Array.from(
@@ -200,7 +200,7 @@ export default function ProjectDetailPage({
     const nameToUse = (overrideName || targetAppName || appName).trim();
     if (!nameToUse) return false;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://116.118.50.199:8080/api/deploy';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     try {
