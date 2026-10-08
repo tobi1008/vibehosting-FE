@@ -1,8 +1,10 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GithubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { refreshGithubOAuthToken, saveUserGithubTokens } from "@/lib/githubToken";
 
 const IMPERSONATE_SECRET = process.env.NEXTAUTH_SECRET || "***REMOVED***";
 
@@ -57,6 +59,19 @@ async function ensureAdminUser() {
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "***REMOVED***",
   providers: [
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GithubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            authorization: {
+              params: {
+                scope: "repo,read:user,user:email",
+              },
+            },
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -172,13 +187,130 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account, profile }) {
+      // 1. Gán thông tin người dùng khi đăng nhập ban đầu
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
         token.isImpersonating = (user as any).isImpersonating ?? false;
         token.originalAdminId = (user as any).originalAdminId ?? null;
       }
+
+      // 2. Nếu đăng nhập thông qua GitHub Provider
+      if (account && account.provider === "github") {
+        const expiresIn = account.expires_at
+          ? Math.max(0, account.expires_at - Math.floor(Date.now() / 1000))
+          : 28800;
+        const expiresAt = account.expires_at
+          ? new Date(account.expires_at * 1000)
+          : new Date(Date.now() + 28800 * 1000);
+
+        token.githubAccessToken = account.access_token || null;
+        token.githubRefreshToken = (account.refresh_token as string) || null;
+        token.githubTokenExpiresAt = expiresAt.getTime();
+        token.githubUsername = (profile as any)?.login || user?.name || null;
+        token.githubAvatar = (profile as any)?.avatar_url || (user as any)?.image || null;
+
+        if (token.id) {
+          saveUserGithubTokens(token.id as string, {
+            accessToken: account.access_token!,
+            refreshToken: (account.refresh_token as string) || null,
+            expiresAt,
+            githubUsername: token.githubUsername,
+            githubAvatar: token.githubAvatar,
+          }).catch((err) =>
+            console.error("[NextAuth] Error saving GitHub tokens on OAuth login:", err)
+          );
+        }
+      }
+
+      // 3. Cơ chế Refresh Token Rotation cho GitHub
+      if (token.id) {
+        // Trường hợp A: Đã có refresh token và thời hạn trong JWT
+        if (token.githubRefreshToken && token.githubTokenExpiresAt) {
+          const BUFFER_MS = 5 * 60 * 1000; // 5 phút buffer an toàn
+          const isExpiringSoon = Date.now() >= (token.githubTokenExpiresAt - BUFFER_MS);
+
+          if (isExpiringSoon) {
+            console.log(`[NextAuth JWT] GitHub token for user ${token.id} expiring soon. Rotating token...`);
+            const rotation = await refreshGithubOAuthToken(token.githubRefreshToken);
+
+            if (rotation.success) {
+              token.githubAccessToken = rotation.accessToken;
+              token.githubRefreshToken = rotation.refreshToken;
+              token.githubTokenExpiresAt = rotation.expiresAt.getTime();
+              token.githubError = null;
+
+              await saveUserGithubTokens(token.id as string, {
+                accessToken: rotation.accessToken,
+                refreshToken: rotation.refreshToken,
+                expiresAt: rotation.expiresAt,
+              });
+            } else {
+              console.warn(`[NextAuth JWT] Token rotation failed:`, rotation.errorDescription);
+              token.githubError = "RefreshAccessTokenError";
+            }
+          }
+        } else {
+          // Trường hợp B: Chưa có GitHub token trong JWT (e.g. liên kết qua 1-Click OAuth sau khi đăng nhập credentials)
+          // Đồng bộ từ database mỗi 30s để tránh query database quá thường xuyên
+          const now = Date.now();
+          const lastSync = (token as any)._lastGithubDbSync || 0;
+
+          if (now - lastSync > 30 * 1000) {
+            (token as any)._lastGithubDbSync = now;
+            try {
+              const dbUser = await prisma.user.findUnique({
+                where: { id: token.id as string },
+                select: {
+                  githubToken: true,
+                  githubRefreshToken: true,
+                  githubTokenExpiresAt: true,
+                  githubUsername: true,
+                  githubAvatar: true,
+                },
+              });
+
+              if (dbUser?.githubToken) {
+                token.githubAccessToken = dbUser.githubToken;
+                token.githubRefreshToken = dbUser.githubRefreshToken || null;
+                token.githubTokenExpiresAt = dbUser.githubTokenExpiresAt
+                  ? dbUser.githubTokenExpiresAt.getTime()
+                  : null;
+                token.githubUsername = dbUser.githubUsername || null;
+                token.githubAvatar = dbUser.githubAvatar || null;
+
+                // Nếu token lấy từ DB cũng sắp/đã hết hạn, tiến hành rotate ngay
+                if (token.githubRefreshToken && token.githubTokenExpiresAt) {
+                  const BUFFER_MS = 5 * 60 * 1000;
+                  if (Date.now() >= token.githubTokenExpiresAt - BUFFER_MS) {
+                    const rotation = await refreshGithubOAuthToken(token.githubRefreshToken);
+                    if (rotation.success) {
+                      token.githubAccessToken = rotation.accessToken;
+                      token.githubRefreshToken = rotation.refreshToken;
+                      token.githubTokenExpiresAt = rotation.expiresAt.getTime();
+                      await saveUserGithubTokens(token.id as string, {
+                        accessToken: rotation.accessToken,
+                        refreshToken: rotation.refreshToken,
+                        expiresAt: rotation.expiresAt,
+                      });
+                    }
+                  }
+                }
+              } else if (dbUser && !dbUser.githubToken) {
+                token.githubAccessToken = null;
+                token.githubRefreshToken = null;
+                token.githubTokenExpiresAt = null;
+                token.githubUsername = null;
+                token.githubAvatar = null;
+              }
+            } catch {
+              // Bỏ qua lỗi DB tạm thời
+            }
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -187,6 +319,13 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).role = token.role;
         (session.user as any).isImpersonating = token.isImpersonating ?? false;
         (session.user as any).originalAdminId = token.originalAdminId ?? null;
+        (session.user as any).githubAccessToken = token.githubAccessToken || null;
+        (session.user as any).githubRefreshToken = token.githubRefreshToken || null;
+        (session.user as any).githubTokenExpiresAt = token.githubTokenExpiresAt || null;
+        (session.user as any).githubUsername = token.githubUsername || null;
+        (session.user as any).githubAvatar = token.githubAvatar || null;
+        (session.user as any).isGithubConnected = Boolean(token.githubAccessToken);
+        (session.user as any).githubError = token.githubError || null;
       }
       return session;
     }

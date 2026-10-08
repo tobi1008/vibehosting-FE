@@ -458,10 +458,13 @@ export default function ProfilePage() {
                   <div>
                     <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                       <GithubIcon className="w-4 h-4" />
-                      Kết nối trực tiếp qua GitHub (1-Click OAuth)
+                      <span>Kết nối trực tiếp qua GitHub (1-Click OAuth)</span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-normal">
+                        Token Rotation
+                      </span>
                     </h4>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Bấm nút để ủy quyền cho Vibe Hosting tự động nạp repositories mà không cần tạo token thủ công.
+                      Bấm nút để ủy quyền cho Vibe Hosting tự động nạp repositories với cơ chế tự động xoay vòng Refresh Token (Token Rotation), duy trì kết nối bền vững liên tục không lo bị hết hạn qua đêm.
                     </p>
                   </div>
                   <a

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, stagedProjectFiles, isBinaryFile } from '@/lib/projectFiles';
+import { getOrRefreshUserGithubToken } from '@/lib/githubToken';
 
 export async function GET(
   req: Request,
@@ -69,11 +70,8 @@ export async function GET(
 
     let userGithubToken: string | null = null;
     if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { githubToken: true },
-      });
-      userGithubToken = user?.githubToken || null;
+      const tokenInfo = await getOrRefreshUserGithubToken(userId);
+      userGithubToken = tokenInfo?.token || null;
     }
 
     const project = await prisma.project.findFirst({

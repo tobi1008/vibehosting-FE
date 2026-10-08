@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, buildTreeFromPaths, stagedProjectFiles } from '@/lib/projectFiles';
+import { getOrRefreshUserGithubToken } from '@/lib/githubToken';
 
 // Helper to fetch git tree items from a GitHub repo
 async function fetchRepoTreeItems(
@@ -88,11 +89,8 @@ export async function GET(
 
     let userGithubToken: string | null = null;
     if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { githubToken: true },
-      });
-      userGithubToken = user?.githubToken || null;
+      const tokenInfo = await getOrRefreshUserGithubToken(userId);
+      userGithubToken = tokenInfo?.token || null;
     }
 
     const project = await prisma.project.findFirst({

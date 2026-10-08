@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { saveUserGithubTokens } from '@/lib/githubToken';
 
 export async function GET(req: Request) {
   const reqUrl = new URL(req.url);
@@ -57,6 +58,9 @@ export async function GET(req: Request) {
     }
 
     const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token || null;
+    const expiresIn = Number(tokenData.expires_in) || (tokenData.refresh_token ? 28800 : null);
+    const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null;
 
     // 3. Lấy thông tin tài khoản GitHub người dùng vừa liên kết
     const userRes = await fetch('https://api.github.com/user', {
@@ -72,17 +76,17 @@ export async function GET(req: Request) {
 
     const githubUser = await userRes.json();
 
-    // 4. Lưu trực tiếp vào Database cho User này
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        githubToken: accessToken,
-        githubUsername: githubUser.login,
-        githubAvatar: githubUser.avatar_url,
-      },
+    // 4. Lưu trực tiếp vào Database cho User này kèm Refresh Token và thời hạn
+    await saveUserGithubTokens(userId, {
+      accessToken,
+      refreshToken,
+      expiresIn,
+      expiresAt,
+      githubUsername: githubUser.login,
+      githubAvatar: githubUser.avatar_url,
     });
 
-    console.log(`[GitHub OAuth] Successfully connected GitHub @${githubUser.login} for user ${userId}`);
+    console.log(`[GitHub OAuth] Successfully connected GitHub @${githubUser.login} for user ${userId} with token expiration at: ${expiresAt ? expiresAt.toISOString() : 'N/A'}`);
 
     const targetUrl = new URL(returnTo || '/profile', req.url);
     targetUrl.searchParams.set('github_connected', 'success');

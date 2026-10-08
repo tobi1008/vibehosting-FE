@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, stagedProjectFiles } from '@/lib/projectFiles';
+import { getOrRefreshUserGithubToken, saveUserGithubTokens } from '@/lib/githubToken';
 
 // Helper to detect environment/secret files that should NEVER be committed to git
 function isEnvSecretFile(filePath: string): boolean {
@@ -290,9 +291,22 @@ export async function POST(
       files,
     } = body;
 
-    if (!githubToken || typeof githubToken !== 'string') {
+    let activeToken = (typeof githubToken === 'string' && githubToken.trim().length > 0) ? githubToken.trim() : null;
+
+    if (!activeToken) {
+      const session = await getServerSession(authOptions);
+      const userId = (session?.user as any)?.id;
+      if (userId) {
+        const tokenInfo = await getOrRefreshUserGithubToken(userId);
+        if (tokenInfo?.token) {
+          activeToken = tokenInfo.token;
+        }
+      }
+    }
+
+    if (!activeToken) {
       return NextResponse.json(
-        { error: 'GitHub Personal Access Token (PAT) là bắt buộc để đẩy code lên GitHub' },
+        { error: 'GitHub Token là bắt buộc để đẩy code lên GitHub. Vui lòng kết nối tài khoản GitHub hoặc nhập PAT.' },
         { status: 400 }
       );
     }
@@ -306,7 +320,7 @@ export async function POST(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          githubToken,
+          githubToken: activeToken,
           commitMessage,
           repoName,
           targetBranch,
@@ -321,7 +335,7 @@ export async function POST(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            githubToken,
+            githubToken: activeToken,
             commitMessage,
             repoName,
             targetBranch,
@@ -390,12 +404,7 @@ export async function POST(
     const userId = (session?.user as any)?.id;
 
     if (userId) {
-      prisma.user
-        .update({
-          where: { id: userId },
-          data: { githubToken },
-        })
-        .catch(() => {});
+      saveUserGithubTokens(userId, { accessToken: activeToken }).catch(() => {});
     }
 
     const project = await prisma.project.findFirst({
@@ -406,7 +415,7 @@ export async function POST(
       return NextResponse.json({ error: 'Không tìm thấy thông tin dự án' }, { status: 404 });
     }
 
-    const octokit = new Octokit({ auth: githubToken });
+    const octokit = new Octokit({ auth: activeToken });
 
     // Validate token and fetch user identity
     let authUser: any;

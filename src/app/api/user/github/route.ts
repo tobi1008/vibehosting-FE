@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Octokit } from "@octokit/rest";
+import {
+  getOrRefreshUserGithubToken,
+  saveUserGithubTokens,
+  invalidateUserGithubToken,
+} from "@/lib/githubToken";
 
 export async function GET() {
   try {
@@ -13,16 +18,21 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Tự động kiểm tra và làm mới token nếu sắp hết hạn
+    const tokenInfo = await getOrRefreshUserGithubToken(userId);
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { githubToken: true, githubUsername: true, githubAvatar: true },
+      select: { githubUsername: true, githubAvatar: true },
     });
 
     return NextResponse.json({
-      connected: Boolean(user?.githubToken),
-      githubToken: user?.githubToken || null,
+      connected: Boolean(tokenInfo?.token),
+      githubToken: tokenInfo?.token || null,
       githubUsername: user?.githubUsername || null,
       githubAvatar: user?.githubAvatar || null,
+      expiresAt: tokenInfo?.expiresAt || null,
+      refreshed: Boolean(tokenInfo?.refreshed),
     });
   } catch (error) {
     console.error("Failed to fetch GitHub info:", error);
@@ -70,26 +80,19 @@ export async function POST(req: Request) {
     }
 
     // Save token and GitHub user info to database
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        githubToken: cleanToken,
-        githubUsername: githubUser.login,
-        githubAvatar: githubUser.avatar_url,
-      },
-      select: {
-        id: true,
-        username: true,
-        githubUsername: true,
-        githubAvatar: true,
-      },
+    await saveUserGithubTokens(userId, {
+      accessToken: cleanToken,
+      refreshToken: null,
+      expiresAt: null,
+      githubUsername: githubUser.login,
+      githubAvatar: githubUser.avatar_url,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Connected successfully as @${updated.githubUsername}`,
-      githubUsername: updated.githubUsername,
-      githubAvatar: updated.githubAvatar,
+      message: `Connected successfully as @${githubUser.login}`,
+      githubUsername: githubUser.login,
+      githubAvatar: githubUser.avatar_url,
     });
   } catch (error) {
     console.error("Failed to connect GitHub:", error);
@@ -106,14 +109,7 @@ export async function DELETE() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        githubToken: null,
-        githubUsername: null,
-        githubAvatar: null,
-      },
-    });
+    await invalidateUserGithubToken(userId);
 
     return NextResponse.json({
       success: true,

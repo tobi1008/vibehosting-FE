@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOrRefreshUserGithubToken } from "@/lib/githubToken";
 
 export async function GET() {
   try {
@@ -12,20 +13,23 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        email: true,
-        role: true,
-        githubUsername: true,
-        githubAvatar: true,
-        githubToken: true,
-        createdAt: true,
-      },
-    });
+    const [user, tokenInfo] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          email: true,
+          role: true,
+          githubUsername: true,
+          githubAvatar: true,
+          githubToken: true,
+          createdAt: true,
+        },
+      }),
+      getOrRefreshUserGithubToken(userId),
+    ]);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -39,7 +43,7 @@ export async function GET() {
       role: user.role,
       githubUsername: user.githubUsername,
       githubAvatar: user.githubAvatar,
-      isGithubConnected: Boolean(user.githubToken),
+      isGithubConnected: Boolean(tokenInfo?.token || user.githubToken),
       createdAt: user.createdAt,
     });
   } catch (error) {
