@@ -30,10 +30,18 @@ export async function GET(req: Request) {
       });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { githubUsername: true, githubRefreshToken: true },
-    });
+    let user: any = null;
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { githubUsername: true, githubRefreshToken: true },
+      });
+    } catch {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { githubUsername: true },
+      });
+    }
 
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get("q") || "").toLowerCase().trim();

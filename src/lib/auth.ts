@@ -36,7 +36,8 @@ export function verifyImpersonateToken(token: string): { targetUserId: string; o
 async function ensureAdminUser() {
   try {
     const adminExists = await prisma.user.findUnique({
-      where: { username: "admin" }
+      where: { username: "admin" },
+      select: { id: true },
     });
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash("***REMOVED***", 10);
@@ -94,6 +95,7 @@ export const authOptions: NextAuthOptions = {
 
           const targetUser = await prisma.user.findUnique({
             where: { id: credentials.impersonateUserId },
+            select: { id: true, name: true, username: true, email: true, role: true },
           });
 
           if (!targetUser) {
@@ -127,7 +129,8 @@ export const authOptions: NextAuthOptions = {
           try {
             await ensureAdminUser();
             const dbAdmin = await prisma.user.findUnique({
-              where: { username: "admin" }
+              where: { username: "admin" },
+              select: { id: true, name: true, email: true, role: true },
             });
             if (dbAdmin) {
               return {
@@ -159,7 +162,8 @@ export const authOptions: NextAuthOptions = {
           await ensureAdminUser();
 
           const user = await prisma.user.findUnique({
-            where: { username: credentials.username }
+            where: { username: credentials.username },
+            select: { id: true, username: true, name: true, email: true, password: true, role: true },
           });
 
           if (!user) {

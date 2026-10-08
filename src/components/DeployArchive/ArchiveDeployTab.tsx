@@ -16,6 +16,7 @@ import {
   Info,
   Check,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -410,8 +411,10 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
                 ))}
               </div>
 
-              <p className="text-[11px] text-muted-foreground/70 mt-3">
-                Kích thước tối đa đề xuất: 200MB • Tự động giải nén và build trên container
+              <p className="text-[11px] text-muted-foreground/70 mt-3 flex items-center justify-center gap-1.5 flex-wrap">
+                <span>Tối ưu cho Vibe Coding &amp; mã nguồn từ <strong className="text-amber-400/90 font-medium">aistudio.google.com</strong></span>
+                <span>•</span>
+                <span>Tối đa: 200MB</span>
               </p>
             </div>
           ) : (
@@ -475,8 +478,8 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
         {/* HƯỚNG DẪN & BEST PRACTICES */}
         <div className="bg-card border border-border rounded-xl p-5 shadow-xs flex flex-col gap-3">
           <div className="flex items-center gap-2 text-foreground font-semibold text-xs">
-            <Info className="w-4 h-4 text-amber-400" />
-            <span>Mẹo đóng gói mã nguồn để build mượt nhất:</span>
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Mẹo đóng gói &amp; Chuẩn Vibe Coding (aistudio.google.com):</span>
           </div>
           <ul className="text-xs text-muted-foreground space-y-2 list-disc list-inside leading-relaxed">
             <li>
@@ -486,7 +489,10 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
               <strong>Tối ưu dung lượng:</strong> Vui lòng loại bỏ thư mục <code className="text-foreground bg-muted px-1 py-0.5 rounded text-[11px]">node_modules</code>, <code className="text-foreground bg-muted px-1 py-0.5 rounded text-[11px]">.git</code>, <code className="text-foreground bg-muted px-1 py-0.5 rounded text-[11px]">dist</code> hoặc <code className="text-foreground bg-muted px-1 py-0.5 rounded text-[11px]">.next</code> trước khi nén để quá trình tải lên nhanh hơn.
             </li>
             <li>
-              <strong>Tự động nhận diện:</strong> Hệ thống Nixpacks &amp; Docker daemon trên cụm K3s sẽ tự phát hiện ngôn ngữ và cài đặt thư viện tự động.
+              <strong>Chuẩn Vibe aistudio.google.com:</strong> Tương thích hoàn hảo với mã nguồn xuất từ <span className="text-foreground font-medium underline decoration-amber-400/40 underline-offset-2">Google AI Studio</span>, Gemini Apps, React/Vite, Next.js, Python (FastAPI/Streamlit) hoặc Node.js. Hệ thống tự động nhận diện runtime và khởi chạy tức thì mà không cần cấu hình phức tạp.
+            </li>
+            <li>
+              <strong>Biến môi trường AI (Gemini):</strong> Đối với ứng dụng gọi Gemini API, bạn có thể dễ dàng cấu hình biến môi trường <code className="text-foreground bg-muted px-1 py-0.5 rounded text-[11px]">GEMINI_API_KEY</code> trong mục Cài đặt dự án sau khi deploy.
             </li>
           </ul>
         </div>
