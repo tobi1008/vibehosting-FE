@@ -32,11 +32,13 @@ import {
   Boxes,
   Code2,
   Network,
+  FolderArchive,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
+import { ArchiveDeployTab } from "@/components/DeployArchive/ArchiveDeployTab";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -138,8 +140,11 @@ export default function NewProject() {
   const [randomSubdomain, setRandomSubdomain] = useState("");
   const [isPrivateRepo, setIsPrivateRepo] = useState<boolean>(false);
 
+  // Deployment mode tab: "github" | "fullstack" | "monorepo" | "archive"
+  const [deployTab, setDeployTab] = useState<"github" | "fullstack" | "monorepo" | "archive">("github");
+
   // Architecture & Database state
-  const [archType, setArchType] = useState<"web_only" | "web_db" | "fullstack" | "monorepo">("web_only");
+  const [archType, setArchType] = useState<"web_only" | "web_db" | "fullstack" | "monorepo" | "archive">("web_only");
   const [beRepoUrl, setBeRepoUrl] = useState("");
   const [feRepoUrl, setFeRepoUrl] = useState("");
   const [beDomain, setBeDomain] = useState("");
@@ -168,7 +173,7 @@ export default function NewProject() {
     fe_repo_url?: string | null;
     be_domain?: string | null;
     fe_domain?: string | null;
-    db_type?: DatabaseType | null;
+    db_type?: DatabaseType | string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -189,7 +194,17 @@ export default function NewProject() {
         setAppName(qName);
         setSystemSubdomain(qName.toLowerCase().replace(/[^a-z0-9-]/g, ""));
       }
-      if (qArch === "monorepo" || qArch === "fullstack" || qArch === "web_db" || qArch === "web_only") {
+      if (qArch === "archive") {
+        setDeployTab("archive");
+        setArchType("archive");
+      } else if (qArch === "monorepo") {
+        setDeployTab("monorepo");
+        setArchType("monorepo");
+      } else if (qArch === "fullstack") {
+        setDeployTab("fullstack");
+        setArchType("fullstack");
+      } else if (qArch === "web_db" || qArch === "web_only") {
+        setDeployTab("github");
         setArchType(qArch);
       }
     }
@@ -738,6 +753,68 @@ export default function NewProject() {
     }
   };
 
+  const handleArchiveDeploySuccess = async (deployedApp: {
+    app_name: string;
+    app_domain: string;
+    repo_url: string;
+    arch_type: string;
+    db_type: DatabaseType | string | null;
+  }) => {
+    setIsDeploying(true);
+    setDeployResult(null);
+    setLogs([
+      "> Upload complete & accepted by backend.",
+      `> Architecture: ${
+        deployedApp.arch_type === "archive_db"
+          ? "Archive Upload + Internal DB"
+          : "Archive Upload (Web Only)"
+      }`,
+      `> Database: ${deployedApp.db_type ? String(deployedApp.db_type).toUpperCase() : "None"}`,
+      `> Target: ${deployedApp.app_name}`,
+      "> Đang giải nén mã nguồn & kết nối với runtime runner K3s...",
+    ]);
+
+    setCurrentDeploy({
+      app_name: deployedApp.app_name,
+      app_domain: deployedApp.app_domain,
+      repo_url: deployedApp.repo_url,
+      arch_type: deployedApp.arch_type,
+      db_type: deployedApp.db_type as DatabaseType | null,
+      be_repo_url: null,
+      fe_repo_url: null,
+      be_domain: null,
+      fe_domain: null,
+    });
+
+    // Kích hoạt polling log realtime ngay lập tức
+    startLogPolling(deployedApp.app_name, deployedApp.app_domain);
+
+    // Lưu vào database / context
+    await addProject({
+      app_name: deployedApp.app_name,
+      repo_url: deployedApp.repo_url,
+      app_domain: deployedApp.app_domain,
+      status: "deploying",
+      arch_type: deployedApp.arch_type,
+      db_type: deployedApp.db_type as DatabaseType | null,
+      be_repo_url: null,
+      fe_repo_url: null,
+      be_domain: null,
+      fe_domain: null,
+      auto_cicd: false,
+    });
+
+    fetch(`/api/apps/${encodeURIComponent(deployedApp.app_name)}/config`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auto_cicd: false }),
+    }).catch(() => {});
+
+    setToastMessage(
+      "Tải lên file nén thành công! Hệ thống đang giải nén và build ứng dụng trên cụm K3s."
+    );
+  };
+
   if (!session) return null;
 
   return (
@@ -749,8 +826,82 @@ export default function NewProject() {
             Back
           </Link>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Let's build something new.</h1>
-          <p className="text-muted-foreground">To deploy a new Project, import an existing Git Repository or enter a URL.</p>
+          <p className="text-muted-foreground">
+            Khởi tạo và triển khai ứng dụng của bạn lên cụm Kubernetes (K3s).
+          </p>
         </div>
+      </div>
+
+      {/* TOP DEPLOYMENT METHOD TABS */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-muted/40 rounded-xl border border-border mb-8 w-fit">
+        <button
+          type="button"
+          onClick={() => {
+            setDeployTab("github");
+            if (archType === "fullstack" || archType === "monorepo" || archType === "archive") {
+              setArchType("web_only");
+            }
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            deployTab === "github"
+              ? "bg-background text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <GithubIcon className="w-3.5 h-3.5" />
+          <span>Deploy từ GitHub</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeployTab("fullstack");
+            setArchType("fullstack");
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            deployTab === "fullstack"
+              ? "bg-background text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Boxes className="w-3.5 h-3.5 text-purple-400" />
+          <span>Deploy Fullstack (2-Repo)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeployTab("monorepo");
+            setArchType("monorepo");
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            deployTab === "monorepo"
+              ? "bg-background text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Code2 className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Monorepo</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeployTab("archive");
+            setArchType("archive");
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all relative ${
+            deployTab === "archive"
+              ? "bg-background text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FolderArchive className="w-3.5 h-3.5 text-amber-400" />
+          <span>Tải lên mã nguồn (ZIP / TAR / RAR)</span>
+          <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
+            MỚI
+          </span>
+        </button>
       </div>
 
       {/* Success Toast */}
@@ -788,13 +939,17 @@ export default function NewProject() {
       <AnimatePresence mode="wait">
         {!isDeploying ? (
           <motion.div 
-            key="form"
+            key={deployTab === "archive" ? "archive-mode" : "git-mode"}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="flex flex-col lg:flex-row gap-8"
+            className="w-full"
           >
-            {/* Left side: GitHub Repos */}
+            {deployTab === "archive" ? (
+              <ArchiveDeployTab onDeploySuccess={handleArchiveDeploySuccess} />
+            ) : (
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Left side: GitHub Repos */}
             <div className="w-full lg:w-1/2 flex flex-col gap-4">
               <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-[500px]">
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
@@ -1104,11 +1259,12 @@ export default function NewProject() {
                     <span className="text-[11px] text-muted-foreground">Deployment Model</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
                     {/* Option 1: Web Application Only */}
                     <button
                       type="button"
                       onClick={() => {
+                        setDeployTab("github");
                         setArchType("web_only");
                         setFileError(null);
                       }}
@@ -1140,6 +1296,7 @@ export default function NewProject() {
                     <button
                       type="button"
                       onClick={() => {
+                        setDeployTab("github");
                         setArchType("web_db");
                         setFileError(null);
                       }}
@@ -1171,6 +1328,7 @@ export default function NewProject() {
                     <button
                       type="button"
                       onClick={() => {
+                        setDeployTab("fullstack");
                         setArchType("fullstack");
                         setFileError(null);
                       }}
@@ -1202,6 +1360,7 @@ export default function NewProject() {
                     <button
                       type="button"
                       onClick={() => {
+                        setDeployTab("monorepo");
                         setArchType("monorepo");
                         setFileError(null);
                       }}
@@ -1227,6 +1386,34 @@ export default function NewProject() {
                         <span className="text-xs font-semibold text-foreground block">Monorepo / Open Source</span>
                         <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                           Single Repo (FE + BE + DB)
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Option 5: Tải lên File nén mã nguồn (ZIP / TAR / RAR) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeployTab("archive");
+                        setArchType("archive");
+                        setFileError(null);
+                      }}
+                      className="p-3 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10 text-left flex flex-col gap-2 transition-all relative group"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                          <FolderArchive className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 bg-amber-500 text-black rounded font-mono">
+                          MỚI
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-foreground block group-hover:text-amber-400 transition-colors">
+                          Tải lên mã nguồn
+                        </span>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                          ZIP, TAR, RAR, 7Z
                         </p>
                       </div>
                     </button>
@@ -1891,7 +2078,9 @@ export default function NewProject() {
                 </div>
               </form>
             </div>
-          </motion.div>
+          </div>
+        )}
+      </motion.div>
         ) : (
           <motion.div 
             key="terminal"

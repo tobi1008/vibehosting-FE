@@ -36,6 +36,7 @@ import {
   Edit3,
   Code2,
   History,
+  FolderArchive,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -488,6 +489,12 @@ export default function ProjectDetailPage({
                   Monorepo
                 </span>
               )}
+              {(project?.arch_type === 'archive' || project?.arch_type === 'archive_db') && (
+                <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20">
+                  <FolderArchive className="w-3 h-3 text-amber-400" />
+                  {project?.arch_type === 'archive_db' ? 'Archive + DB' : 'Archive (ZIP/TAR)'}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-4 mt-1.5 text-xs text-muted-foreground">
@@ -569,15 +576,22 @@ export default function ProjectDetailPage({
                     </a>
                   )}
                   {project && (
-                    <a
-                      href={project.repo_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                      <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="truncate max-w-xs">{project.repo_url.replace('https://github.com/', '')}</span>
-                    </a>
+                    project.repo_url?.startsWith('archive:') ? (
+                      <span className="flex items-center gap-1 text-amber-400/90 font-mono text-xs">
+                        <FolderArchive className="w-3.5 h-3.5" />
+                        <span className="truncate max-w-xs">{project.repo_url.replace('archive:', '')}</span>
+                      </span>
+                    ) : (
+                      <a
+                        href={project.repo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      >
+                        <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="truncate max-w-xs">{project.repo_url?.replace('https://github.com/', '')}</span>
+                      </a>
+                    )
                   )}
                 </>
               )}
@@ -1255,6 +1269,10 @@ export default function ProjectDetailPage({
                       ? 'Fullstack 2-Repo'
                       : project?.arch_type === 'monorepo'
                       ? 'Monorepo / Open Source (Single Repo)'
+                      : project?.arch_type === 'archive_db'
+                      ? `Archive Package + Database (${project.db_type})`
+                      : project?.arch_type === 'archive'
+                      ? 'Archive Package (ZIP/TAR)'
                       : project?.db_type && project.db_type !== 'none'
                       ? `Web + Database (${project.db_type})`
                       : 'Web Only'}
@@ -1356,16 +1374,25 @@ export default function ProjectDetailPage({
                     </div>
 
                     <div>
-                      <span className="text-xs text-muted-foreground block">GitHub Repository:</span>
-                      <a
-                        href={project?.repo_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-foreground hover:underline font-mono text-xs flex items-center gap-1 mt-0.5"
-                      >
-                        {project?.repo_url}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                      <span className="text-xs text-muted-foreground block">
+                        {project?.repo_url?.startsWith('archive:') ? 'Source Archive File:' : 'GitHub Repository:'}
+                      </span>
+                      {project?.repo_url?.startsWith('archive:') ? (
+                        <div className="text-amber-400 font-mono text-xs flex items-center gap-1 mt-0.5">
+                          <FolderArchive className="w-3.5 h-3.5" />
+                          <span>{project.repo_url.replace('archive:', '')}</span>
+                        </div>
+                      ) : (
+                        <a
+                          href={project?.repo_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-foreground hover:underline font-mono text-xs flex items-center gap-1 mt-0.5"
+                        >
+                          {project?.repo_url}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
                     </div>
                   </>
                 )}

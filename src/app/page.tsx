@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useProjects, Project } from "@/lib/ProjectContext";
-import { Plus, GitBranch, ExternalLink, Activity, Clock, Loader2, AlertCircle, Trash2, Terminal, X, Sliders, Cpu, Box } from "lucide-react";
+import { Plus, GitBranch, ExternalLink, Activity, Clock, Loader2, AlertCircle, Trash2, Terminal, X, Sliders, Cpu, Box, FolderArchive } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -294,6 +294,12 @@ export default function Dashboard() {
                     Monorepo
                   </span>
                 )}
+                {(project.arch_type === "archive" || project.arch_type === "archive_db" || project.repo_url?.startsWith("archive:")) && (
+                  <span className="text-[10px] font-medium px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20 flex items-center gap-1">
+                    <FolderArchive className="w-2.5 h-2.5" />
+                    Archive
+                  </span>
+                )}
               </div>
               
               <a
@@ -308,8 +314,17 @@ export default function Dashboard() {
 
               <div className="pt-4 border-t border-border flex flex-col gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <GitBranch className="w-3.5 h-3.5" />
-                  <span className="truncate">{project.repo_url.replace("https://github.com/", "")}</span>
+                  {project.repo_url?.startsWith("archive:") ? (
+                    <>
+                      <FolderArchive className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="truncate font-mono">{project.repo_url.replace("archive:", "")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <GitBranch className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{project.repo_url?.replace("https://github.com/", "")}</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
