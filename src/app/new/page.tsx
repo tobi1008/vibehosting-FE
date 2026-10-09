@@ -829,70 +829,38 @@ export default function NewProject() {
   if (!session) return null;
 
   return (
-    <div className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full">
-      <div className="mb-10 flex items-center justify-between">
+    <div className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4 text-sm font-medium">
+          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-3 text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Let's build something new.</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Khởi tạo và triển khai ứng dụng của bạn lên cụm Kubernetes (K3s).
           </p>
         </div>
       </div>
 
       {/* TOP DEPLOYMENT METHOD TABS */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-muted/40 rounded-xl border border-border mb-8 w-fit">
+      <div className="flex items-center gap-2 p-1.5 bg-card/60 backdrop-blur-md rounded-2xl border border-border/80 shadow-xs mb-8 w-fit">
         <button
           type="button"
           onClick={() => {
             setDeployTab("github");
-            if (archType === "fullstack" || archType === "monorepo" || archType === "archive") {
+            if (archType === "archive") {
               setArchType("web_only");
             }
           }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-            deployTab === "github"
-              ? "bg-background text-foreground shadow-xs border border-border"
-              : "text-muted-foreground hover:text-foreground"
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+            deployTab !== "archive"
+              ? "bg-foreground text-background shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
         >
-          <GithubIcon className="w-3.5 h-3.5" />
-          <span>Deploy từ GitHub</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setDeployTab("fullstack");
-            setArchType("fullstack");
-          }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-            deployTab === "fullstack"
-              ? "bg-background text-foreground shadow-xs border border-border"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Boxes className="w-3.5 h-3.5 text-purple-400" />
-          <span>Deploy Fullstack (2-Repo)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setDeployTab("monorepo");
-            setArchType("monorepo");
-          }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-            deployTab === "monorepo"
-              ? "bg-background text-foreground shadow-xs border border-border"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Monorepo</span>
+          <GithubIcon className="w-4 h-4" />
+          <span>Git Repository (GitHub)</span>
         </button>
 
         <button
@@ -901,14 +869,14 @@ export default function NewProject() {
             setDeployTab("archive");
             setArchType("archive");
           }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all relative ${
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
             deployTab === "archive"
-              ? "bg-background text-foreground shadow-xs border border-border"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-foreground text-background shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
         >
-          <FolderArchive className="w-3.5 h-3.5 text-amber-400" />
-          <span>Tải lên mã nguồn (ZIP / TAR / RAR)</span>
+          <FolderArchive className="w-4 h-4 text-amber-400" />
+          <span>Tải lên File nén (ZIP / TAR / RAR)</span>
           <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
             MỚI
           </span>
@@ -959,15 +927,18 @@ export default function NewProject() {
             {deployTab === "archive" ? (
               <ArchiveDeployTab onDeploySuccess={handleArchiveDeploySuccess} />
             ) : (
-              <div className="flex flex-col lg:flex-row gap-8">
-                {/* Left side: GitHub Repos */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-4">
-              <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-[500px]">
-                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <GitBranch className="w-5 h-5 text-foreground" />
-                    <h2 className="font-semibold text-sm">Import Git Repository</h2>
-                  </div>
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Left side: GitHub Repos (Sticky Sidebar) */}
+                <div className="w-full lg:w-[400px] xl:w-[440px] shrink-0 lg:sticky lg:top-8 flex flex-col gap-4">
+                  <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[580px] max-h-[820px]">
+                    <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+                      <div className="flex items-center gap-3">
+                        <GitBranch className="w-5 h-5 text-foreground" />
+                        <div>
+                          <h2 className="font-semibold text-sm">Import Git Repository</h2>
+                          <p className="text-[11px] text-muted-foreground">Chọn repo để tự động điền cấu hình</p>
+                        </div>
+                      </div>
                   <div className="flex items-center gap-2">
                     {isGithubConnected && githubUsername && (
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
@@ -1232,8 +1203,8 @@ export default function NewProject() {
             </div>
 
             {/* Right side: Configuration Form */}
-            <div className="w-full lg:w-1/2">
-              <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-6 sm:p-8 flex flex-col gap-6">
+            <div className="w-full flex-1 min-w-0">
+              <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl shadow-sm overflow-hidden p-6 sm:p-8 flex flex-col gap-6">
                 
                 {/* 1. Project Name */}
                 <div className="flex flex-col gap-2">
@@ -1261,16 +1232,16 @@ export default function NewProject() {
                 </div>
 
                 {/* 2. Architecture Type Selection */}
-                <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                <div className="flex flex-col gap-3.5 pt-4 border-t border-border">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium flex items-center gap-2">
+                    <label className="text-sm font-semibold flex items-center gap-2 text-foreground">
                       <Server className="w-4 h-4 text-foreground" />
-                      Architecture Type
+                      Kiến trúc ứng dụng (Architecture)
                     </label>
-                    <span className="text-[11px] text-muted-foreground">Deployment Model</span>
+                    <span className="text-xs text-muted-foreground">Chọn mô hình triển khai</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Option 1: Web Application Only */}
                     <button
                       type="button"
@@ -1279,26 +1250,30 @@ export default function NewProject() {
                         setArchType("web_only");
                         setFileError(null);
                       }}
-                      className={`p-3 rounded-xl border text-left flex flex-col gap-2 transition-all relative ${
+                      className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
                         archType === "web_only"
                           ? "border-foreground bg-foreground/5 shadow-xs ring-1 ring-foreground/20"
-                          : "border-border bg-background hover:border-foreground/40 text-muted-foreground"
+                          : "border-border bg-card/40 hover:border-foreground/40 hover:bg-muted/20 text-muted-foreground"
                       }`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className={`p-1.5 rounded-lg shrink-0 ${
-                          archType === "web_only" ? "bg-foreground text-background" : "bg-muted text-foreground"
+                      <div className="flex items-start justify-between w-full">
+                        <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                          archType === "web_only" ? "bg-foreground text-background" : "bg-muted text-foreground group-hover:bg-foreground/10"
                         }`}>
-                          <Server className="w-3.5 h-3.5" />
+                          <Server className="w-4 h-4" />
                         </div>
-                        {archType === "web_only" && (
-                          <div className="w-2 h-2 rounded-full bg-foreground" />
-                        )}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          archType === "web_only"
+                            ? "bg-foreground/10 text-foreground border-foreground/30 font-medium"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          Độc lập
+                        </span>
                       </div>
                       <div>
-                        <span className="text-xs font-semibold text-foreground block">Web Only</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                          Standalone Web App / API
+                        <span className="text-sm font-semibold text-foreground block">Web Application Only</span>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          Standalone Web App, Single Page App hoặc REST/GraphQL API độc lập.
                         </p>
                       </div>
                     </button>
@@ -1311,26 +1286,30 @@ export default function NewProject() {
                         setArchType("web_db");
                         setFileError(null);
                       }}
-                      className={`p-3 rounded-xl border text-left flex flex-col gap-2 transition-all relative ${
+                      className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
                         archType === "web_db"
-                          ? "border-foreground bg-foreground/5 shadow-xs ring-1 ring-foreground/20"
-                          : "border-border bg-background hover:border-foreground/40 text-muted-foreground"
+                          ? "border-blue-500 bg-blue-500/10 shadow-xs ring-1 ring-blue-500/30"
+                          : "border-border bg-card/40 hover:border-blue-500/40 hover:bg-muted/20 text-muted-foreground"
                       }`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className={`p-1.5 rounded-lg shrink-0 ${
-                          archType === "web_db" ? "bg-foreground text-background" : "bg-muted text-foreground"
+                      <div className="flex items-start justify-between w-full">
+                        <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                          archType === "web_db" ? "bg-blue-600 text-white" : "bg-muted text-foreground group-hover:bg-blue-500/10 group-hover:text-blue-400"
                         }`}>
-                          <Database className="w-3.5 h-3.5" />
+                          <Database className="w-4 h-4" />
                         </div>
-                        {archType === "web_db" && (
-                          <div className="w-2 h-2 rounded-full bg-foreground" />
-                        )}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          archType === "web_db"
+                            ? "bg-blue-500/20 text-blue-400 border-blue-500/30 font-medium"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          K3s Database
+                        </span>
                       </div>
                       <div>
-                        <span className="text-xs font-semibold text-foreground block">Web + Database</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                          K3s Internal Database
+                        <span className="text-sm font-semibold text-foreground block">Web + Database</span>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          Web App kèm cụm Database riêng (MySQL, Postgres, Mongo, Redis) với file backup.
                         </p>
                       </div>
                     </button>
@@ -1343,26 +1322,30 @@ export default function NewProject() {
                         setArchType("fullstack");
                         setFileError(null);
                       }}
-                      className={`p-3 rounded-xl border text-left flex flex-col gap-2 transition-all relative ${
+                      className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
                         archType === "fullstack"
                           ? "border-purple-500 bg-purple-500/10 shadow-xs ring-1 ring-purple-500/30"
-                          : "border-border bg-background hover:border-purple-500/40 text-muted-foreground"
+                          : "border-border bg-card/40 hover:border-purple-500/40 hover:bg-muted/20 text-muted-foreground"
                       }`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className={`p-1.5 rounded-lg shrink-0 ${
-                          archType === "fullstack" ? "bg-purple-600 text-white" : "bg-muted text-foreground"
+                      <div className="flex items-start justify-between w-full">
+                        <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                          archType === "fullstack" ? "bg-purple-600 text-white" : "bg-muted text-foreground group-hover:bg-purple-500/10 group-hover:text-purple-400"
                         }`}>
-                          <Boxes className="w-3.5 h-3.5" />
+                          <Boxes className="w-4 h-4" />
                         </div>
-                        {archType === "fullstack" && (
-                          <div className="w-2 h-2 rounded-full bg-purple-500" />
-                        )}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          archType === "fullstack"
+                            ? "bg-purple-500/20 text-purple-300 border-purple-500/30 font-medium"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          2 Repositories
+                        </span>
                       </div>
                       <div>
-                        <span className="text-xs font-semibold text-foreground block">Fullstack 2-Repo</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                          Frontend + Backend + DB
+                        <span className="text-sm font-semibold text-foreground block">Fullstack (2-Repo)</span>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          2 Repo độc lập Frontend &amp; Backend, tự động liên kết domain &amp; database chung.
                         </p>
                       </div>
                     </button>
@@ -1375,33 +1358,41 @@ export default function NewProject() {
                         setArchType("monorepo");
                         setFileError(null);
                       }}
-                      className={`p-3 rounded-xl border text-left flex flex-col gap-2 transition-all relative ${
+                      className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
                         archType === "monorepo"
                           ? "border-indigo-500 bg-indigo-500/10 shadow-xs ring-1 ring-indigo-500/30"
-                          : "border-border bg-background hover:border-indigo-500/40 text-muted-foreground"
+                          : "border-border bg-card/40 hover:border-indigo-500/40 hover:bg-muted/20 text-muted-foreground"
                       }`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className={`p-1.5 rounded-lg shrink-0 ${
-                          archType === "monorepo" ? "bg-indigo-600 text-white" : "bg-muted text-foreground"
+                      <div className="flex items-start justify-between w-full">
+                        <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                          archType === "monorepo" ? "bg-indigo-600 text-white" : "bg-muted text-foreground group-hover:bg-indigo-500/10 group-hover:text-indigo-400"
                         }`}>
-                          <Code2 className="w-3.5 h-3.5" />
+                          <Code2 className="w-4 h-4" />
                         </div>
-                        {archType === "monorepo" ? (
-                          <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                        ) : (
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 bg-indigo-500 text-white rounded">NEW</span>
-                        )}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          archType === "monorepo"
+                            ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-medium"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          All-in-One
+                        </span>
                       </div>
                       <div>
-                        <span className="text-xs font-semibold text-foreground block">Monorepo / Open Source</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                          Single Repo (FE + BE + DB)
+                        <span className="text-sm font-semibold text-foreground block">Monorepo / Single Repo</span>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          1 Repo duy nhất chứa cả FE + BE + DB (Next.js fullstack, Turborepo, NestJS...).
                         </p>
                       </div>
                     </button>
+                  </div>
 
-                    {/* Option 5: Tải lên File nén mã nguồn (ZIP / TAR / RAR) */}
+                  {/* Switch to Archive Mode quick link */}
+                  <div className="mt-1 p-3 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                      <FolderArchive className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="truncate">Deploy từ file nén mã nguồn thay vì GitHub repo?</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -1409,24 +1400,9 @@ export default function NewProject() {
                         setArchType("archive");
                         setFileError(null);
                       }}
-                      className="p-3 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10 text-left flex flex-col gap-2 transition-all relative group"
+                      className="text-amber-400 hover:text-amber-300 font-medium hover:underline shrink-0 text-xs transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
-                          <FolderArchive className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 bg-amber-500 text-black rounded font-mono">
-                          MỚI
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-xs font-semibold text-foreground block group-hover:text-amber-400 transition-colors">
-                          Tải lên mã nguồn
-                        </span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                          ZIP, TAR, RAR, 7Z
-                        </p>
-                      </div>
+                      Tải lên file ZIP / TAR →
                     </button>
                   </div>
                 </div>

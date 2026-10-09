@@ -346,10 +346,10 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
   };
 
   return (
-    <form onSubmit={handleSubmitDeploy} className="flex flex-col lg:flex-row gap-8">
+    <form onSubmit={handleSubmitDeploy} className="flex flex-col lg:flex-row gap-8 items-start">
       {/* CỘT TRÁI: KHU VỰC TẢI FILE (DROPZONE) & HƯỚNG DẪN */}
-      <div className="w-full lg:w-1/2 flex flex-col gap-5">
-        <div className="bg-card border border-border rounded-xl shadow-sm p-6 flex flex-col gap-5">
+      <div className="w-full lg:w-[420px] xl:w-[460px] shrink-0 lg:sticky lg:top-8 flex flex-col gap-5">
+        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl shadow-sm p-6 flex flex-col gap-5">
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
@@ -507,8 +507,8 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
       </div>
 
       {/* CỘT PHẢI: FORM CẤU HÌNH THÔNG TIN DỰ ÁN & DATABASE */}
-      <div className="w-full lg:w-1/2">
-        <div className="bg-card border border-border rounded-xl shadow-sm p-6 sm:p-8 flex flex-col gap-6">
+      <div className="w-full flex-1 min-w-0">
+        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl shadow-sm p-6 sm:p-8 flex flex-col gap-6">
           {/* 1. TÊN ỨNG DỤNG */}
           <div className="flex flex-col gap-2">
             <label htmlFor="archiveAppName" className="text-sm font-medium flex items-center justify-between">
