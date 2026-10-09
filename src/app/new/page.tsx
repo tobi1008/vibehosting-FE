@@ -39,6 +39,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
 import { ArchiveDeployTab } from "@/components/DeployArchive/ArchiveDeployTab";
+import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
+import { useAiProvider } from "@/lib/useAiProvider";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -158,6 +160,9 @@ export default function NewProject() {
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI Provider state
+  const { selectedProvider: selectedAiProvider, setProvider: setSelectedAiProvider } = useAiProvider();
   
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<{ type: "success" | "error"; text: string; url?: string } | null>(null);
@@ -580,11 +585,13 @@ export default function NewProject() {
           fe_domain?: string;
           db_type: string;
           github_token?: string;
+          ai_provider?: string;
         } = {
           app_name: slugifiedName,
           repo_url: repoUrl.trim(),
           be_domain: finalBeDomain.trim(),
           db_type: selectedDb,
+          ai_provider: selectedAiProvider,
         };
 
         if (hasFrontend && finalFeDomain && finalFeDomain.trim()) {
@@ -611,6 +618,7 @@ export default function NewProject() {
         formData.append("fe_repo_url", feRepoUrl.trim());
         formData.append("fe_domain", finalFeDomain.trim());
         formData.append("db_type", selectedDb);
+        formData.append("ai_provider", selectedAiProvider);
         if (dbFile) formData.append("backup_file", dbFile);
         if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
@@ -625,6 +633,7 @@ export default function NewProject() {
         formData.append("app_name", slugifiedName);
         formData.append("app_domain", finalDomain);
         formData.append("db_type", selectedDb);
+        formData.append("ai_provider", selectedAiProvider);
         if (dbFile) formData.append("backup_file", dbFile);
         if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
@@ -639,10 +648,12 @@ export default function NewProject() {
           app_name: string;
           app_domain: string;
           github_token?: string | null;
+          ai_provider?: string;
         } = {
           repo_url: repoUrl,
           app_name: slugifiedName,
           app_domain: finalDomain,
+          ai_provider: selectedAiProvider,
         };
 
         if (isPrivateRepo && githubToken) {
@@ -2034,6 +2045,13 @@ export default function NewProject() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* AI Engine Selection */}
+                <AiProviderSelector
+                  variant="cards"
+                  value={selectedAiProvider}
+                  onChange={setSelectedAiProvider}
+                />
 
                 {/* 5. Submit Button */}
                 <div className="pt-6">

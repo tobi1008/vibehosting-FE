@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { app_name, component = 'be', user_note = '', auto_apply = false } = body;
+    const { app_name, component = 'be', user_note = '', auto_apply = false, ai_provider } = body;
 
     if (!app_name) {
       return NextResponse.json(
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         component,
         user_note,
         auto_apply,
+        ...(ai_provider ? { ai_provider } : {}),
       }),
     });
 

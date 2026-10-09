@@ -9,6 +9,7 @@ export async function POST(req: Request) {
       message,
       history = [],
       preferred_model,
+      ai_provider,
     } = body;
 
     if (!app_name || !message) {
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
         message,
         history,
         preferred_model,
+        ...(ai_provider ? { ai_provider } : {}),
       }),
     });
 

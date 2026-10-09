@@ -19,6 +19,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
+import { useAiProvider } from "@/lib/useAiProvider";
 
 export type ArchiveDatabaseType = "mysql" | "postgresql" | "mongodb" | "mariadb";
 
@@ -137,6 +139,9 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [deployError, setDeployError] = useState<string | null>(null);
+
+  // AI Provider state
+  const { selectedProvider: selectedAiProvider, setProvider: setSelectedAiProvider } = useAiProvider();
 
   // Slugified app name
   const slugifiedName = appName
@@ -257,6 +262,7 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
     formData.append("archive_file", archiveFile);
     formData.append("app_name", slugifiedName);
     formData.append("app_domain", finalDomain);
+    formData.append("ai_provider", selectedAiProvider);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
     const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
@@ -821,6 +827,13 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
               <span>{deployError}</span>
             </div>
           )}
+
+          {/* AI Engine Selector */}
+          <AiProviderSelector
+            variant="cards"
+            value={selectedAiProvider}
+            onChange={setSelectedAiProvider}
+          />
 
           {/* 5. NÚT SUBMIT DEPLOY */}
           <div className="pt-2">

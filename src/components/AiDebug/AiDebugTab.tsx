@@ -31,6 +31,8 @@ import {
   Activity,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AiProviderSelector } from '@/components/AiEngine/AiProviderSelector';
+import { useAiProvider } from '@/lib/useAiProvider';
 
 export interface DebugAction {
   action_type: 'set_env' | 'exec_pod' | 'edit_file' | 'restart_deployment' | 'restart' | string;
@@ -94,6 +96,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
   // Common Configuration
   const [component, setComponent] = useState<'be' | 'fe' | 'all'>('be');
+  const { selectedProvider: selectedAiProvider, setProvider: setSelectedAiProvider, currentProvider } = useAiProvider();
 
   // Tab 1 (Dashboard) State
   const [userNote, setUserNote] = useState('');
@@ -185,7 +188,8 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     setProcessLogs([]);
     setCurrentStage(1);
 
-    addLog(`[AI-DEVOPS-AGENT] Bắt đầu phiên chẩn đoán tự động cho ứng dụng '${appName}' (target: ${component.toUpperCase()})...`, 'agent');
+    const engineName = currentProvider?.name || (selectedAiProvider === 'hermes' ? 'Hermes Agent' : 'Google Antigravity');
+    addLog(`[AI-DEVOPS-AGENT] Bắt đầu phiên chẩn đoán tự động (${engineName}) cho ứng dụng '${appName}' (target: ${component.toUpperCase()})...`, 'agent');
 
     const timer1 = setTimeout(() => {
       setCurrentStage(1);
@@ -208,7 +212,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
     const timer4 = setTimeout(() => {
       setCurrentStage(4);
-      addLog(`[AI-DEVOPS-AGENT-REASONER] Bắt đầu mô hình suy luận: đối chiếu mã nguồn, cấu hình CORS, Prisma migrations, Port mapping...`, 'agent');
+      addLog(`[AI-DEVOPS-AGENT-REASONER] Bắt đầu mô hình suy luận ${engineName}: đối chiếu mã nguồn, cấu hình CORS, Prisma migrations, Port mapping...`, 'agent');
       addLog(`[AST-ANALYZER] Quét stack traces và các ngoại lệ kết nối...`, 'info');
     }, 10000);
 
@@ -223,6 +227,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
           component,
           user_note: userNote.trim() || undefined,
           auto_apply: autoApply,
+          ai_provider: selectedAiProvider,
         }),
       });
 
@@ -389,6 +394,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
           component: component === 'all' ? 'be' : component,
           message: msgToSend,
           history: apiHistory,
+          ai_provider: selectedAiProvider,
         }),
       });
 
@@ -546,7 +552,14 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
         </div>
 
         {/* Right Action Tools */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* AI Engine Switcher */}
+          <AiProviderSelector
+            variant="toggle"
+            value={selectedAiProvider}
+            onChange={setSelectedAiProvider}
+          />
+
           {activeSubTab === 'dashboard' && (
             <button
               type="button"
@@ -611,6 +624,11 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                   </p>
                 </div>
               </div>
+              <AiProviderSelector
+                variant="dropdown"
+                value={selectedAiProvider}
+                onChange={setSelectedAiProvider}
+              />
             </div>
 
             <form onSubmit={handleAnalyze} className="space-y-4">
@@ -1123,17 +1141,25 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
               </div>
             </div>
 
-            {/* Quick link back to Dashboard if actions exist */}
-            {analysis?.actions && analysis.actions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('dashboard')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-medium transition-colors"
-              >
-                <span>Xem Action Items ({analysis.actions.length})</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              <AiProviderSelector
+                variant="dropdown"
+                value={selectedAiProvider}
+                onChange={setSelectedAiProvider}
+              />
+
+              {/* Quick link back to Dashboard if actions exist */}
+              {analysis?.actions && analysis.actions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('dashboard')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-medium transition-colors"
+                >
+                  <span>Xem Action Items ({analysis.actions.length})</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Chat Messages Stream */}
