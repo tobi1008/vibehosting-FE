@@ -33,12 +33,14 @@ import {
   Code2,
   Network,
   FolderArchive,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
 import { ArchiveDeployTab } from "@/components/DeployArchive/ArchiveDeployTab";
+import { OpenSourceDeployTab } from "@/components/OpenSourceTemplates/OpenSourceDeployTab";
 import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
 import { useAiProvider } from "@/lib/useAiProvider";
 
@@ -142,8 +144,8 @@ export default function NewProject() {
   const [randomSubdomain, setRandomSubdomain] = useState("");
   const [isPrivateRepo, setIsPrivateRepo] = useState<boolean>(false);
 
-  // Deployment mode tab: "github" | "fullstack" | "monorepo" | "archive"
-  const [deployTab, setDeployTab] = useState<"github" | "fullstack" | "monorepo" | "archive">("github");
+  // Deployment mode tab: "github" | "fullstack" | "monorepo" | "archive" | "template"
+  const [deployTab, setDeployTab] = useState<"github" | "fullstack" | "monorepo" | "archive" | "template">("github");
 
   // Architecture & Database state
   const [archType, setArchType] = useState<"web_only" | "web_db" | "fullstack" | "monorepo" | "archive">("web_only");
@@ -159,6 +161,7 @@ export default function NewProject() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [urlTemplateId, setUrlTemplateId] = useState<string>("wordpress");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI Provider state
@@ -194,12 +197,18 @@ export default function NewProject() {
       const qRepo = params.get("repo_url");
       const qName = params.get("app_name");
       const qArch = params.get("arch") || params.get("type");
+      const qTab = params.get("tab");
+      const qTemplate = params.get("template");
+      if (qTemplate) setUrlTemplateId(qTemplate);
       if (qRepo) setRepoUrl(qRepo);
       if (qName) {
         setAppName(qName);
         setSystemSubdomain(qName.toLowerCase().replace(/[^a-z0-9-]/g, ""));
       }
-      if (qArch === "archive") {
+      if (qTab === "template" || qTab === "templates" || qTab === "cms" || qTab === "opensource" || qArch === "template" || qTemplate) {
+        setDeployTab("template");
+        setArchType("web_db");
+      } else if (qArch === "archive" || qTab === "archive") {
         setDeployTab("archive");
         setArchType("archive");
       } else if (qArch === "monorepo") {
@@ -844,7 +853,7 @@ export default function NewProject() {
       </div>
 
       {/* TOP DEPLOYMENT METHOD TABS */}
-      <div className="flex items-center gap-2 p-1.5 bg-card/60 backdrop-blur-md rounded-2xl border border-border/80 shadow-xs mb-8 w-fit">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-card/60 backdrop-blur-md rounded-2xl border border-border/80 shadow-xs mb-8 w-fit">
         <button
           type="button"
           onClick={() => {
@@ -853,8 +862,8 @@ export default function NewProject() {
               setArchType("web_only");
             }
           }}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-            deployTab !== "archive"
+          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            deployTab !== "archive" && deployTab !== "template"
               ? "bg-foreground text-background shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
@@ -869,7 +878,7 @@ export default function NewProject() {
             setDeployTab("archive");
             setArchType("archive");
           }}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
+          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${
             deployTab === "archive"
               ? "bg-foreground text-background shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -879,6 +888,25 @@ export default function NewProject() {
           <span>Tải lên File nén (ZIP / TAR / RAR)</span>
           <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
             MỚI
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeployTab("template");
+            setArchType("web_db");
+          }}
+          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${
+            deployTab === "template"
+              ? "bg-foreground text-background shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <span>1-Click CMS &amp; Open Source</span>
+          <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-mono">
+            CLEAN DB
           </span>
         </button>
       </div>
@@ -918,7 +946,7 @@ export default function NewProject() {
       <AnimatePresence mode="wait">
         {!isDeploying ? (
           <motion.div 
-            key={deployTab === "archive" ? "archive-mode" : "git-mode"}
+            key={deployTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -926,6 +954,11 @@ export default function NewProject() {
           >
             {deployTab === "archive" ? (
               <ArchiveDeployTab onDeploySuccess={handleArchiveDeploySuccess} />
+            ) : deployTab === "template" ? (
+              <OpenSourceDeployTab
+                onDeploySuccess={handleArchiveDeploySuccess}
+                initialTemplateId={urlTemplateId}
+              />
             ) : (
               <div className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Left side: GitHub Repos (Sticky Sidebar) */}
@@ -1387,23 +1420,36 @@ export default function NewProject() {
                     </button>
                   </div>
 
-                  {/* Switch to Archive Mode quick link */}
-                  <div className="mt-1 p-3 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3 text-xs">
+                  {/* Switch to Archive / Open Source quick links */}
+                  <div className="mt-1 p-3 rounded-xl bg-muted/30 border border-border/60 flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2 text-muted-foreground min-w-0">
-                      <FolderArchive className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="truncate">Deploy từ file nén mã nguồn thay vì GitHub repo?</span>
+                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span className="truncate">Cần triển khai nhanh CMS mẫu sạch hoặc tải lên file ZIP?</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeployTab("archive");
-                        setArchType("archive");
-                        setFileError(null);
-                      }}
-                      className="text-amber-400 hover:text-amber-300 font-medium hover:underline shrink-0 text-xs transition-colors cursor-pointer"
-                    >
-                      Tải lên file ZIP / TAR →
-                    </button>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeployTab("template");
+                          setArchType("web_db");
+                        }}
+                        className="text-purple-400 hover:text-purple-300 font-medium hover:underline text-xs transition-colors cursor-pointer"
+                      >
+                        ⚡ 1-Click CMS (Clean DB) →
+                      </button>
+                      <span className="text-border">•</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeployTab("archive");
+                          setArchType("archive");
+                          setFileError(null);
+                        }}
+                        className="text-amber-400 hover:text-amber-300 font-medium hover:underline text-xs transition-colors cursor-pointer"
+                      >
+                        Tải file ZIP →
+                      </button>
+                    </div>
                   </div>
                 </div>
 
