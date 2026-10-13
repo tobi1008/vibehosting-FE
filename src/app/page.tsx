@@ -212,20 +212,12 @@ export default function Dashboard() {
           <p className="text-muted-foreground mb-6 max-w-sm">
             You haven't deployed any projects yet. Create your first project to get started.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/new"
-              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium text-sm transition-all hover:opacity-90 shadow-sm"
-            >
-              Deploy Project
-            </Link>
-            <Link
-              href="/new?tab=template"
-              className="inline-flex items-center justify-center gap-2 border border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 px-4 py-2 rounded-md font-medium text-sm transition-all"
-            >
-              ⚡ 1-Click CMS (WordPress, Laravel)
-            </Link>
-          </div>
+          <Link
+            href="/new"
+            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium text-sm transition-all hover:opacity-90"
+          >
+            Deploy Project
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

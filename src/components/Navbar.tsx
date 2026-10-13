@@ -41,7 +41,6 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'Overview' },
     { href: '/profile', label: 'Profile' },
-    { href: '/templates', label: 'CMS & Templates' },
     ...(isAdmin && !isImpersonating ? [{ href: '/admin/users', label: 'Users' }] : []),
     { href: '#', label: 'Integrations' },
     { href: '#', label: 'Activity' },

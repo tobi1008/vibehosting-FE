@@ -40,7 +40,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
 import { ArchiveDeployTab } from "@/components/DeployArchive/ArchiveDeployTab";
-import { OpenSourceDeployTab } from "@/components/OpenSourceTemplates/OpenSourceDeployTab";
 import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
 import { useAiProvider } from "@/lib/useAiProvider";
 
@@ -144,11 +143,11 @@ export default function NewProject() {
   const [randomSubdomain, setRandomSubdomain] = useState("");
   const [isPrivateRepo, setIsPrivateRepo] = useState<boolean>(false);
 
-  // Deployment mode tab: "github" | "fullstack" | "monorepo" | "archive" | "template"
-  const [deployTab, setDeployTab] = useState<"github" | "fullstack" | "monorepo" | "archive" | "template">("github");
+  // Deployment mode tab: "github" | "fullstack" | "monorepo" | "archive"
+  const [deployTab, setDeployTab] = useState<"github" | "fullstack" | "monorepo" | "archive">("github");
 
   // Architecture & Database state
-  const [archType, setArchType] = useState<"web_only" | "web_db" | "fullstack" | "monorepo" | "archive">("web_only");
+  const [archType, setArchType] = useState<"web_only" | "web_db" | "clean_db" | "fullstack" | "monorepo" | "archive">("web_only");
   const [beRepoUrl, setBeRepoUrl] = useState("");
   const [feRepoUrl, setFeRepoUrl] = useState("");
   const [beDomain, setBeDomain] = useState("");
@@ -161,7 +160,6 @@ export default function NewProject() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [urlTemplateId, setUrlTemplateId] = useState<string>("wordpress");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI Provider state
@@ -198,17 +196,12 @@ export default function NewProject() {
       const qName = params.get("app_name");
       const qArch = params.get("arch") || params.get("type");
       const qTab = params.get("tab");
-      const qTemplate = params.get("template");
-      if (qTemplate) setUrlTemplateId(qTemplate);
       if (qRepo) setRepoUrl(qRepo);
       if (qName) {
         setAppName(qName);
         setSystemSubdomain(qName.toLowerCase().replace(/[^a-z0-9-]/g, ""));
       }
-      if (qTab === "template" || qTab === "templates" || qTab === "cms" || qTab === "opensource" || qArch === "template" || qTemplate) {
-        setDeployTab("template");
-        setArchType("web_db");
-      } else if (qArch === "archive" || qTab === "archive") {
+      if (qArch === "archive" || qTab === "archive") {
         setDeployTab("archive");
         setArchType("archive");
       } else if (qArch === "monorepo") {
@@ -217,6 +210,9 @@ export default function NewProject() {
       } else if (qArch === "fullstack") {
         setDeployTab("fullstack");
         setArchType("fullstack");
+      } else if (qArch === "clean_db" || qArch === "cms") {
+        setDeployTab("github");
+        setArchType("clean_db");
       } else if (qArch === "web_db" || qArch === "web_only") {
         setDeployTab("github");
         setArchType(qArch);
@@ -559,7 +555,9 @@ export default function NewProject() {
     setLogs([
       "> Sending deployment request to backend...",
       `> Architecture: ${
-        archType === 'monorepo'
+        archType === 'clean_db'
+          ? 'Deploy GitHub Repo có Database (Clean Database / CMS)'
+          : archType === 'monorepo'
           ? 'Monorepo / Open Source (Single Repo)'
           : archType === 'fullstack'
           ? 'Fullstack (FE + BE + DB)'
@@ -568,7 +566,9 @@ export default function NewProject() {
           : 'Web Only'
       }`,
       `> Target API: ${
-        archType === 'monorepo'
+        archType === 'clean_db'
+          ? 'POST /api/deploy-open-source (application/json)'
+          : archType === 'monorepo'
           ? 'POST /api/deploy-monorepo (application/json)'
           : archType === 'fullstack'
           ? 'POST /api/deploy-fullstack (multipart/form-data)'
@@ -585,7 +585,25 @@ export default function NewProject() {
     try {
       let response: Response;
 
-      if (archType === "monorepo") {
+      if (archType === "clean_db") {
+        // Trường hợp: Deploy GitHub Repo có Database (Clean Database / CMS) -> application/json
+        const cleanDbPayload = {
+          repo_url: repoUrl.trim(),
+          app_name: slugifiedName,
+          app_domain: finalDomain,
+          db_type: selectedDb,
+          ai_provider: selectedAiProvider,
+          github_token: isPrivateRepo && githubToken && githubToken.trim() ? githubToken.trim() : null,
+        };
+
+        response = await fetch(`/api/deploy-open-source`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cleanDbPayload),
+        });
+      } else if (archType === "monorepo") {
         // Trường hợp 4: Monorepo / Open Source (1 Repo duy nhất) -> application/json
         const monorepoPayload: {
           app_name: string;
@@ -853,7 +871,7 @@ export default function NewProject() {
       </div>
 
       {/* TOP DEPLOYMENT METHOD TABS */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-card/60 backdrop-blur-md rounded-2xl border border-border/80 shadow-xs mb-8 w-fit">
+      <div className="flex items-center gap-2 p-1.5 bg-card/60 backdrop-blur-md rounded-2xl border border-border/80 shadow-xs mb-8 w-fit">
         <button
           type="button"
           onClick={() => {
@@ -862,8 +880,8 @@ export default function NewProject() {
               setArchType("web_only");
             }
           }}
-          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            deployTab !== "archive" && deployTab !== "template"
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            deployTab !== "archive"
               ? "bg-foreground text-background shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
@@ -878,7 +896,7 @@ export default function NewProject() {
             setDeployTab("archive");
             setArchType("archive");
           }}
-          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${
             deployTab === "archive"
               ? "bg-foreground text-background shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -888,25 +906,6 @@ export default function NewProject() {
           <span>Tải lên File nén (ZIP / TAR / RAR)</span>
           <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
             MỚI
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setDeployTab("template");
-            setArchType("web_db");
-          }}
-          className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${
-            deployTab === "template"
-              ? "bg-foreground text-background shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span>1-Click CMS &amp; Open Source</span>
-          <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-mono">
-            CLEAN DB
           </span>
         </button>
       </div>
@@ -946,7 +945,7 @@ export default function NewProject() {
       <AnimatePresence mode="wait">
         {!isDeploying ? (
           <motion.div 
-            key={deployTab}
+            key={deployTab === "archive" ? "archive-mode" : "git-mode"}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -954,11 +953,6 @@ export default function NewProject() {
           >
             {deployTab === "archive" ? (
               <ArchiveDeployTab onDeploySuccess={handleArchiveDeploySuccess} />
-            ) : deployTab === "template" ? (
-              <OpenSourceDeployTab
-                onDeploySuccess={handleArchiveDeploySuccess}
-                initialTemplateId={urlTemplateId}
-              />
             ) : (
               <div className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Left side: GitHub Repos (Sticky Sidebar) */}
@@ -1241,14 +1235,21 @@ export default function NewProject() {
                 
                 {/* 1. Project Name */}
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="appName" className="text-sm font-medium">
-                    Project Name
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="appName" className="text-sm font-medium">
+                      Project Name {archType === "clean_db" && <span className="text-xs text-muted-foreground font-normal">(app_name)</span>}
+                    </label>
+                    {archType === "clean_db" && (
+                      <span className="text-[11px] text-emerald-400 font-medium">
+                        Clean Database 1-Click
+                      </span>
+                    )}
+                  </div>
                   <input
                     id="appName"
                     type="text"
-                    placeholder="my-awesome-app"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm"
+                    placeholder={archType === "clean_db" ? "my-wordpress" : "my-awesome-app"}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm font-mono"
                     value={appName}
                     onChange={(e) => {
                       setAppName(e.target.value);
@@ -1256,6 +1257,11 @@ export default function NewProject() {
                     }}
                     required
                   />
+                  {archType === "clean_db" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Chữ thường, không dấu, không khoảng trắng (vd: <span className="font-mono text-foreground font-medium">my-wordpress</span>, <span className="font-mono text-foreground font-medium">my-cms</span>)
+                    </p>
+                  )}
                   {appName && (
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
                       <span>app_name:</span>
@@ -1311,7 +1317,50 @@ export default function NewProject() {
                       </div>
                     </button>
 
-                    {/* Option 2: Web App + Internal Database */}
+                    {/* Option 2: Deploy có Database (Clean DB / CMS) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeployTab("github");
+                        setArchType("clean_db");
+                        setFileError(null);
+                        if (!appName || appName === "my-awesome-app") {
+                          setAppName("my-wordpress");
+                          setSystemSubdomain("my-wordpress");
+                        }
+                        if (!repoUrl) {
+                          setRepoUrl("https://github.com/WordPress/WordPress.git");
+                        }
+                      }}
+                      className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
+                        archType === "clean_db"
+                          ? "border-emerald-500 bg-emerald-500/10 shadow-xs ring-1 ring-emerald-500/30"
+                          : "border-border bg-card/40 hover:border-emerald-500/40 hover:bg-muted/20 text-muted-foreground"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between w-full">
+                        <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                          archType === "clean_db" ? "bg-emerald-600 text-white" : "bg-muted text-foreground group-hover:bg-emerald-500/10 group-hover:text-emerald-400"
+                        }`}>
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          archType === "clean_db"
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-medium"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          Clean DB (1-Click)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-foreground block">Clean Database / CMS</span>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          Deploy mã nguồn mở (WordPress, Laravel, CMS) với DB trắng sạch, không cần file backup SQL.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Option 3: Web App + Internal Database (Restore Backup) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1336,13 +1385,13 @@ export default function NewProject() {
                             ? "bg-blue-500/20 text-blue-400 border-blue-500/30 font-medium"
                             : "bg-muted text-muted-foreground border-border"
                         }`}>
-                          K3s Database
+                          Restore Backup .sql
                         </span>
                       </div>
                       <div>
-                        <span className="text-sm font-semibold text-foreground block">Web + Database</span>
+                        <span className="text-sm font-semibold text-foreground block">Web + DB (File Backup)</span>
                         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                          Web App kèm cụm Database riêng (MySQL, Postgres, Mongo, Redis) với file backup.
+                          Web App kèm nạp file backup (.sql, .dump, .json) có sẵn từ máy tính.
                         </p>
                       </div>
                     </button>
@@ -1420,36 +1469,23 @@ export default function NewProject() {
                     </button>
                   </div>
 
-                  {/* Switch to Archive / Open Source quick links */}
-                  <div className="mt-1 p-3 rounded-xl bg-muted/30 border border-border/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  {/* Switch to Archive Mode quick link */}
+                  <div className="mt-1 p-3 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2 text-muted-foreground min-w-0">
-                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                      <span className="truncate">Cần triển khai nhanh CMS mẫu sạch hoặc tải lên file ZIP?</span>
+                      <FolderArchive className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="truncate">Deploy từ file nén mã nguồn thay vì GitHub repo?</span>
                     </div>
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeployTab("template");
-                          setArchType("web_db");
-                        }}
-                        className="text-purple-400 hover:text-purple-300 font-medium hover:underline text-xs transition-colors cursor-pointer"
-                      >
-                        ⚡ 1-Click CMS (Clean DB) →
-                      </button>
-                      <span className="text-border">•</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeployTab("archive");
-                          setArchType("archive");
-                          setFileError(null);
-                        }}
-                        className="text-amber-400 hover:text-amber-300 font-medium hover:underline text-xs transition-colors cursor-pointer"
-                      >
-                        Tải file ZIP →
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeployTab("archive");
+                        setArchType("archive");
+                        setFileError(null);
+                      }}
+                      className="text-amber-400 hover:text-amber-300 font-medium hover:underline shrink-0 text-xs transition-colors cursor-pointer"
+                    >
+                      Tải lên file ZIP / TAR →
+                    </button>
                   </div>
                 </div>
 
@@ -1783,7 +1819,7 @@ export default function NewProject() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <label htmlFor="repoUrl" className="text-sm font-medium">
-                          Repository URL
+                          {archType === "clean_db" ? "GitHub Repository URL (repo_url)" : "Repository URL"}
                         </label>
                         {isGithubConnected ? (
                           <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
@@ -1802,14 +1838,21 @@ export default function NewProject() {
                       <input
                         id="repoUrl"
                         type="url"
-                        placeholder="https://github.com/username/repo"
-                        className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm"
+                        placeholder={archType === "clean_db" ? "https://github.com/WordPress/WordPress.git" : "https://github.com/username/repo"}
+                        className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm font-mono"
                         value={repoUrl}
                         onChange={(e) => setRepoUrl(e.target.value)}
                         required
                       />
-                      {isGithubConnected && (
-                        <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                      {archType === "clean_db" && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Ví dụ: WordPress chính thức (<span className="font-mono text-foreground font-medium">https://github.com/WordPress/WordPress.git</span>), Laravel, Ghost hoặc CMS bất kỳ.
+                        </p>
+                      )}
+                      
+                      {/* Tùy chọn Private Repo & Token */}
+                      <div className="flex flex-col gap-2 pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={isPrivateRepo}
@@ -1822,7 +1865,17 @@ export default function NewProject() {
                               : "🌐 Repository công khai (Public) - Không gửi token (Bảo mật tối đa)"}
                           </span>
                         </label>
-                      )}
+
+                        {isPrivateRepo && (
+                          <input
+                            type="password"
+                            placeholder="Nhập GitHub Personal Access Token (ghp_... tùy chọn nếu repo private)"
+                            value={githubToken || ""}
+                            onChange={(e) => setGithubToken(e.target.value)}
+                            className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs outline-none focus:border-foreground font-mono"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4 border-t border-border">
@@ -1892,7 +1945,7 @@ export default function NewProject() {
 
                 {/* 4. Database Selection & File Upload */}
                 <AnimatePresence>
-                  {(archType === "web_db" || archType === "fullstack" || archType === "monorepo") && (
+                  {(archType === "web_db" || archType === "clean_db" || archType === "fullstack" || archType === "monorepo") && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -1906,13 +1959,17 @@ export default function NewProject() {
                           <label htmlFor="dbTypeSelect" className="text-sm font-medium flex items-center justify-between">
                             <span className="flex items-center gap-2 text-foreground">
                               <Database className="w-4 h-4 text-foreground" />
-                              {archType === "monorepo" 
+                              {archType === "clean_db"
+                                ? "Loại Database sạch (db_type)"
+                                : archType === "monorepo" 
                                 ? "Loại Database Monorepo (db_type)" 
                                 : archType === "fullstack" 
                                 ? "Shared Database Type (db_type)" 
                                 : "Database Type (db_type)"}
                             </span>
-                            <span className="text-xs text-muted-foreground">Mặc định: MySQL</span>
+                            <span className="text-xs text-muted-foreground">
+                              {archType === "clean_db" ? "Mặc định: MySQL 8.0" : "Mặc định: MySQL"}
+                            </span>
                           </label>
                           <div className="relative">
                             <select
@@ -1921,11 +1978,22 @@ export default function NewProject() {
                               onChange={(e) => handleSelectDatabase(e.target.value as DatabaseType)}
                               className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all cursor-pointer text-foreground appearance-none font-medium pr-10"
                             >
-                              <option value="mysql">MySQL (Relational Database - Mặc định)</option>
-                              <option value="mariadb">MariaDB (Community SQL)</option>
-                              <option value="postgresql">PostgreSQL (Advanced Object-Relational)</option>
-                              <option value="mongodb">MongoDB (NoSQL Document Store)</option>
-                              <option value="redis">Redis (In-Memory Key-Value Cache)</option>
+                              {archType === "clean_db" ? (
+                                <>
+                                  <option value="mysql">MySQL 8.0 (Mặc định cho WordPress &amp; CMS)</option>
+                                  <option value="mariadb">MariaDB 10.11 (Khuyên dùng tối ưu RAM)</option>
+                                  <option value="postgresql">PostgreSQL 15 (Object-Relational / Modern CMS)</option>
+                                  <option value="mongodb">MongoDB 6.0 (NoSQL Document Store)</option>
+                                </>
+                              ) : (
+                                <>
+                                  <option value="mysql">MySQL (Relational Database - Mặc định)</option>
+                                  <option value="mariadb">MariaDB (Community SQL)</option>
+                                  <option value="postgresql">PostgreSQL (Advanced Object-Relational)</option>
+                                  <option value="mongodb">MongoDB (NoSQL Document Store)</option>
+                                  <option value="redis">Redis (In-Memory Key-Value Cache)</option>
+                                </>
+                              )}
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground">
                               <ChevronDown className="w-4 h-4" />
@@ -1946,21 +2014,45 @@ export default function NewProject() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-semibold text-foreground">
-                                  {currentDbConfig.name}
+                                  {archType === "clean_db" && currentDbConfig.id === "mysql"
+                                    ? "MySQL 8.0"
+                                    : archType === "clean_db" && currentDbConfig.id === "mariadb"
+                                    ? "MariaDB 10.11"
+                                    : archType === "clean_db" && currentDbConfig.id === "postgresql"
+                                    ? "PostgreSQL 15"
+                                    : archType === "clean_db" && currentDbConfig.id === "mongodb"
+                                    ? "MongoDB 6.0"
+                                    : currentDbConfig.name}
                                 </span>
                                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border uppercase ${currentDbConfig.badgeColor}`}>
-                                  {currentDbConfig.tag}
+                                  {archType === "clean_db" ? "Clean DB 1-Click" : currentDbConfig.tag}
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground truncate">
-                                {currentDbConfig.description}
+                                {archType === "clean_db"
+                                  ? "Hệ thống tự động cấp phát Database sạch, không cần file backup"
+                                  : currentDbConfig.description}
                               </p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Monorepo Auto-DDL Notice OR Backup File Upload */}
-                        {archType === "monorepo" ? (
+                        {/* Clean DB Notice OR Monorepo Auto-DDL Notice OR Backup File Upload */}
+                        {archType === "clean_db" ? (
+                          <div className="pt-2 border-t border-border/70 flex flex-col gap-2">
+                            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-start gap-2.5">
+                              <Sparkles className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                              <div>
+                                <span className="font-semibold text-emerald-300 block">
+                                  Hệ thống tự động cấp phát Database sạch, không cần file backup
+                                </span>
+                                <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
+                                  Hệ thống tự động cấp phát Database sạch, không cần file backup. Cơ sở dữ liệu và mật khẩu bảo mật cao sẽ được tạo tự động và truyền cấu hình vào container ứng dụng để hoàn tất cài đặt 1-Click.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : archType === "monorepo" ? (
                           <div className="pt-2 border-t border-border/70 flex flex-col gap-2">
                             <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs flex items-start gap-2.5">
                               <Zap className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
@@ -2104,7 +2196,9 @@ export default function NewProject() {
                       <>
                         <Rocket className="w-4 h-4" />
                         <span>
-                          {archType === "monorepo"
+                          {archType === "clean_db"
+                            ? "🚀 Deploy Clean DB / CMS Project"
+                            : archType === "monorepo"
                             ? "🚀 Deploy Monorepo (Single Repo)"
                             : archType === "fullstack"
                             ? "🚀 Deploy Fullstack (2 Repos)"
