@@ -188,7 +188,13 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     setProcessLogs([]);
     setCurrentStage(1);
 
-    const engineName = currentProvider?.name || (selectedAiProvider === 'hermes' ? 'Hermes Agent' : 'Google Antigravity');
+    const engineName =
+      currentProvider?.name ||
+      (selectedAiProvider === 'claude'
+        ? 'Claude Code (Anthropic)'
+        : selectedAiProvider === 'hermes'
+        ? 'Hermes Agent'
+        : 'Google Antigravity');
     addLog(`[AI-DEVOPS-AGENT] Bắt đầu phiên chẩn đoán tự động (${engineName}) cho ứng dụng '${appName}' (target: ${component.toUpperCase()})...`, 'agent');
 
     const timer1 = setTimeout(() => {

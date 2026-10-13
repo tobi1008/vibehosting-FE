@@ -9,8 +9,20 @@ export const DEFAULT_AI_PROVIDERS = [
     models: [
       'gemini-3.7-flash-high',
       'gemini-3.7-flash-medium',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
+      'gemini-3.8-flash-low',
+      'gemini-3.8-flash-medium',
+      'gemini-3.8-flash-high',
+    ],
+  },
+  {
+    id: 'claude',
+    name: 'Claude Code (Anthropic Opus/Sonnet)',
+    badge: 'Trí tuệ cao cấp (Opus 5.5)',
+    description: 'Thực thi Claude Code CLI trực tiếp trên VPS với Opus 5.5, Sonnet 5.5, Haiku 5.5',
+    models: [
+      'claude-opus-5-5',
+      'claude-sonnet-5-5',
+      'claude-haiku-5-5',
     ],
   },
   {
@@ -21,7 +33,8 @@ export const DEFAULT_AI_PROVIDERS = [
     models: [
       'stepfun/step-3.7-flash:free',
       'poolside/laguna-s-2.1:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
+      'meituan/longcat-2.5-preview:free',
+      'openrouter/free',
     ],
   },
 ];

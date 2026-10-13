@@ -572,6 +572,13 @@ export default function NewProject() {
     setDeployResult(null);
     setLogs([
       "> Sending deployment request to backend...",
+      `> AI Engine: ${
+        selectedAiProvider === 'claude'
+          ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
+          : selectedAiProvider === 'hermes'
+          ? 'Hermes Agent (Open-Source LLMs)'
+          : 'Google Antigravity (Gemini Flash)'
+      }`,
       `> Architecture: ${
         archType === 'clean_db'
           ? 'Deploy GitHub Repo có Database (Clean Database / CMS)'
@@ -820,6 +827,13 @@ export default function NewProject() {
     setDeployResult(null);
     setLogs([
       "> Upload complete & accepted by backend.",
+      `> AI Engine: ${
+        selectedAiProvider === 'claude'
+          ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
+          : selectedAiProvider === 'hermes'
+          ? 'Hermes Agent (Open-Source LLMs)'
+          : 'Google Antigravity (Gemini Flash)'
+      }`,
       `> Architecture: ${
         deployedApp.arch_type === "archive_db"
           ? "Archive Upload + Internal DB"
