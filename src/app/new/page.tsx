@@ -323,10 +323,28 @@ export default function NewProject() {
   }, [searchQuery, repos]);
 
   const autoSetAppName = (rawName: string) => {
-    const cleanName = rawName.replace(/-(backend|be|api|frontend|fe|web|ui)$/i, "");
-    if (!appName) {
+    const cleanName = rawName.replace(/-(backend|be|api|frontend|fe|web|ui)$/i, "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!appName || appName === "my-awesome-app" || appName === "my-wordpress") {
       setAppName(cleanName);
       setSystemSubdomain(cleanName.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+    }
+  };
+
+  const handleRepoUrlChange = (url: string) => {
+    setRepoUrl(url);
+    // Tự động trích xuất tên repo để gợi ý appName nếu người dùng chưa đặt tên riêng
+    try {
+      const trimmed = url.trim().replace(/\.git$/, "");
+      const match = trimmed.match(/github\.com\/[^\/]+\/([^\/\?#]+)/);
+      if (match && match[1]) {
+        const extracted = match[1].toLowerCase().replace(/[^a-z0-9-]/g, "");
+        if (extracted && (!appName || appName === "my-awesome-app" || appName === "my-wordpress")) {
+          setAppName(extracted);
+          setSystemSubdomain(extracted);
+        }
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -1248,7 +1266,7 @@ export default function NewProject() {
                   <input
                     id="appName"
                     type="text"
-                    placeholder={archType === "clean_db" ? "my-wordpress" : "my-awesome-app"}
+                    placeholder={archType === "clean_db" ? "bagisto hoặc tên ứng dụng" : "my-awesome-app"}
                     className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm font-mono"
                     value={appName}
                     onChange={(e) => {
@@ -1259,7 +1277,7 @@ export default function NewProject() {
                   />
                   {archType === "clean_db" && (
                     <p className="text-[11px] text-muted-foreground">
-                      Chữ thường, không dấu, không khoảng trắng (vd: <span className="font-mono text-foreground font-medium">my-wordpress</span>, <span className="font-mono text-foreground font-medium">my-cms</span>)
+                      Chữ thường, không dấu, không khoảng trắng (vd: <span className="font-mono text-foreground font-medium">bagisto</span>, <span className="font-mono text-foreground font-medium">my-wordpress</span>)
                     </p>
                   )}
                   {appName && (
@@ -1324,13 +1342,6 @@ export default function NewProject() {
                         setDeployTab("github");
                         setArchType("clean_db");
                         setFileError(null);
-                        if (!appName || appName === "my-awesome-app") {
-                          setAppName("my-wordpress");
-                          setSystemSubdomain("my-wordpress");
-                        }
-                        if (!repoUrl) {
-                          setRepoUrl("https://github.com/WordPress/WordPress.git");
-                        }
                       }}
                       className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative group cursor-pointer ${
                         archType === "clean_db"
@@ -1681,7 +1692,7 @@ export default function NewProject() {
                         placeholder="https://github.com/user/project"
                         className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-xs font-mono"
                         value={repoUrl}
-                        onChange={(e) => setRepoUrl(e.target.value)}
+                        onChange={(e) => handleRepoUrlChange(e.target.value)}
                         required
                       />
                       <p className="text-[11px] text-muted-foreground">
@@ -1838,16 +1849,42 @@ export default function NewProject() {
                       <input
                         id="repoUrl"
                         type="url"
-                        placeholder={archType === "clean_db" ? "https://github.com/WordPress/WordPress.git" : "https://github.com/username/repo"}
+                        placeholder={archType === "clean_db" ? "https://github.com/bagisto/bagisto" : "https://github.com/username/repo"}
                         className="w-full bg-background border border-border rounded-md px-3 py-2 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all text-sm font-mono"
                         value={repoUrl}
-                        onChange={(e) => setRepoUrl(e.target.value)}
+                        onChange={(e) => handleRepoUrlChange(e.target.value)}
                         required
                       />
                       {archType === "clean_db" && (
-                        <p className="text-[11px] text-muted-foreground">
-                          Ví dụ: WordPress chính thức (<span className="font-mono text-foreground font-medium">https://github.com/WordPress/WordPress.git</span>), Laravel, Ghost hoặc CMS bất kỳ.
-                        </p>
+                        <div className="flex flex-col gap-1.5 pt-1">
+                          <p className="text-[11px] text-muted-foreground">
+                            Ví dụ: <span className="font-mono text-foreground font-medium">https://github.com/bagisto/bagisto</span>, WordPress, Ghost, Laravel hoặc repo bất kỳ.
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="text-[11px]">Gợi ý nhanh:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRepoUrlChange("https://github.com/bagisto/bagisto")}
+                              className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-mono text-[11px] border border-border transition-colors cursor-pointer"
+                            >
+                              bagisto/bagisto
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRepoUrlChange("https://github.com/WordPress/WordPress.git")}
+                              className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-mono text-[11px] border border-border transition-colors cursor-pointer"
+                            >
+                              WordPress/WordPress
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRepoUrlChange("https://github.com/laravel/laravel.git")}
+                              className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-mono text-[11px] border border-border transition-colors cursor-pointer"
+                            >
+                              laravel/laravel
+                            </button>
+                          </div>
+                        </div>
                       )}
                       
                       {/* Tùy chọn Private Repo & Token */}
