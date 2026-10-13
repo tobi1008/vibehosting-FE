@@ -12,7 +12,7 @@ import {
   Check,
   Terminal,
 } from 'lucide-react';
-import { useAiProvider, AiProvider } from '@/lib/useAiProvider';
+import { useAiProvider, AiProvider, FALLBACK_AI_PROVIDERS } from '@/lib/useAiProvider';
 
 interface AiProviderSelectorProps {
   variant?: 'cards' | 'toggle' | 'dropdown';
@@ -75,10 +75,35 @@ export function AiProviderSelector({
     selectedProvider: hookProvider,
     setProvider: hookSetProvider,
     providers,
-    currentProvider,
+    currentProvider: hookCurrentProvider,
   } = useAiProvider();
 
+  // Defensive fallback: ensure claude is guaranteed to be present
+  const displayProviders = React.useMemo(() => {
+    const list = providers && providers.length > 0 ? providers : FALLBACK_AI_PROVIDERS;
+    const hasClaude = list.some((p) => p.id === 'claude');
+    if (!hasClaude) {
+      const claudeDef = FALLBACK_AI_PROVIDERS.find((p) => p.id === 'claude');
+      if (claudeDef) {
+        const copy = [...list];
+        const agyIndex = copy.findIndex((p) => p.id === 'agy');
+        if (agyIndex !== -1) {
+          copy.splice(agyIndex + 1, 0, claudeDef);
+        } else {
+          copy.push(claudeDef);
+        }
+        return copy;
+      }
+    }
+    return list;
+  }, [providers]);
+
   const selected = value !== undefined ? value : hookProvider;
+  const effectiveProvider =
+    displayProviders.find((p) => p.id === selected) ||
+    hookCurrentProvider ||
+    displayProviders[0];
+
   const handleSelect = (id: string) => {
     if (onChange) {
       onChange(id);
@@ -123,7 +148,7 @@ export function AiProviderSelector({
             }`}
           />
           <span className="font-semibold truncate max-w-[150px]">
-            {currentProvider?.name || currentVisual.shortName}
+            {effectiveProvider?.name || currentVisual.shortName}
           </span>
           <span
             className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-normal ${currentVisual.badgeClass}`}
@@ -138,7 +163,7 @@ export function AiProviderSelector({
             <div className="px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground border-b border-border/60">
               Chọn AI Reasoning Engine
             </div>
-            {providers.map((p) => {
+            {displayProviders.map((p) => {
               const isSelected = selected === p.id;
               const visual = getProviderVisual(p.id);
               return (
@@ -189,7 +214,7 @@ export function AiProviderSelector({
   if (variant === 'toggle') {
     return (
       <div className={`inline-flex flex-wrap items-center p-1 rounded-xl bg-muted/40 border border-border/80 ${className}`}>
-        {providers.map((p) => {
+        {displayProviders.map((p) => {
           const isSelected = selected === p.id;
           const visual = getProviderVisual(p.id);
           return (
@@ -239,7 +264,7 @@ export function AiProviderSelector({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {providers.map((p) => {
+        {displayProviders.map((p) => {
           const isSelected = selected === p.id;
           const visual = getProviderVisual(p.id);
           return (

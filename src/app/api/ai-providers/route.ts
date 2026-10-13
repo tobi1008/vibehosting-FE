@@ -51,7 +51,22 @@ export async function GET() {
 
     if (res.ok) {
       const data = await res.json();
-      return NextResponse.json(data);
+      if (data && Array.isArray(data.providers) && data.providers.length > 0) {
+        // Ensure claude is always present even if remote VPS backend has not restarted yet
+        const hasClaude = data.providers.some((p: { id: string }) => p.id === 'claude');
+        if (!hasClaude) {
+          const claudeDef = DEFAULT_AI_PROVIDERS.find((p) => p.id === 'claude');
+          if (claudeDef) {
+            const agyIndex = data.providers.findIndex((p: { id: string }) => p.id === 'agy');
+            if (agyIndex !== -1) {
+              data.providers.splice(agyIndex + 1, 0, claudeDef);
+            } else {
+              data.providers.push(claudeDef);
+            }
+          }
+        }
+        return NextResponse.json(data);
+      }
     }
   } catch (err) {
     console.warn('Error fetching /api/ai-providers from backend, using fallback:', err);

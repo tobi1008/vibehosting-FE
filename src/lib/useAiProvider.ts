@@ -75,7 +75,20 @@ export function useAiProvider() {
       .then((data) => {
         if (!isMounted || !data) return;
         if (Array.isArray(data.providers) && data.providers.length > 0) {
-          setProviders(data.providers);
+          const mergedProviders: AiProvider[] = [...data.providers];
+          const hasClaude = mergedProviders.some((p) => p.id === 'claude');
+          if (!hasClaude) {
+            const claudeDef = FALLBACK_AI_PROVIDERS.find((p) => p.id === 'claude');
+            if (claudeDef) {
+              const agyIndex = mergedProviders.findIndex((p) => p.id === 'agy');
+              if (agyIndex !== -1) {
+                mergedProviders.splice(agyIndex + 1, 0, claudeDef);
+              } else {
+                mergedProviders.push(claudeDef);
+              }
+            }
+          }
+          setProviders(mergedProviders);
           const saved = localStorage.getItem(STORAGE_KEY);
           if (!saved && data.default) {
             setSelectedProviderState(data.default);
