@@ -23,7 +23,10 @@ export async function GET(req: Request) {
     const returnTo = searchParams.get('returnTo') || '/profile';
 
     // Tạo state payload ký mã hóa chống CSRF
-    const secret = process.env.NEXTAUTH_SECRET || '***REMOVED***';
+    const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+    if (!secret) {
+      return NextResponse.redirect(new URL('/profile?error=github_oauth_missing_config', req.url));
+    }
     const payload = JSON.stringify({ userId, returnTo, time: Date.now() });
     const hmac = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     const state = Buffer.from(JSON.stringify({ payload, hmac })).toString('base64url');

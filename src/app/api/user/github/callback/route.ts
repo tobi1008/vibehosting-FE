@@ -14,7 +14,10 @@ export async function GET(req: Request) {
 
   try {
     // 1. Xác thực state payload chống CSRF
-    const secret = process.env.NEXTAUTH_SECRET || '***REMOVED***';
+    const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+    if (!secret) {
+      return NextResponse.redirect(new URL('/profile?error=invalid_oauth_state', req.url));
+    }
     const decodedState = JSON.parse(Buffer.from(stateRaw, 'base64url').toString('utf-8'));
     const { payload, hmac } = decodedState;
 

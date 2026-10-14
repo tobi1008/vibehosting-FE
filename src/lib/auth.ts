@@ -6,23 +6,33 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { refreshGithubOAuthToken, saveUserGithubTokens } from "@/lib/githubToken";
 
-const IMPERSONATE_SECRET = process.env.NEXTAUTH_SECRET || "***REMOVED***";
+// Secret và mật khẩu admin chỉ lấy từ biến môi trường, không có giá trị mặc định trong code
+const AUTH_SECRET = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+function safeEqual(a: string, b: string): boolean {
+  const ha = crypto.createHash("sha256").update(a).digest();
+  const hb = crypto.createHash("sha256").update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
 
 export function createImpersonateToken(targetUserId: string, originalAdminId: string): string {
+  if (!AUTH_SECRET) throw new Error("NEXTAUTH_SECRET chưa được cấu hình");
   const timestamp = Date.now();
   const payload = `${targetUserId}:${originalAdminId}:${timestamp}`;
-  const signature = crypto.createHmac("sha256", IMPERSONATE_SECRET).update(payload).digest("hex");
+  const signature = crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("hex");
   return `${payload}:${signature}`;
 }
 
 export function verifyImpersonateToken(token: string): { targetUserId: string; originalAdminId: string } | null {
   try {
+    if (!AUTH_SECRET) return null;
     const parts = token.split(":");
     if (parts.length !== 4) return null;
     const [targetUserId, originalAdminId, timestampStr, signature] = parts;
     const payload = `${targetUserId}:${originalAdminId}:${timestampStr}`;
-    const expectedSig = crypto.createHmac("sha256", IMPERSONATE_SECRET).update(payload).digest("hex");
-    if (signature !== expectedSig) return null;
+    const expectedSig = crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("hex");
+    if (!safeEqual(signature, expectedSig)) return null;
     const timestamp = parseInt(timestampStr, 10);
     // Valid for 5 minutes
     if (Date.now() - timestamp > 5 * 60 * 1000) return null;
@@ -32,15 +42,16 @@ export function verifyImpersonateToken(token: string): { targetUserId: string; o
   }
 }
 
-// Helper to ensure default admin user exists if database is fresh
+// Đảm bảo tài khoản admin tồn tại và mật khẩu trong DB khớp với ADMIN_PASSWORD
 async function ensureAdminUser() {
+  if (!ADMIN_PASSWORD) return;
   try {
-    const adminExists = await prisma.user.findUnique({
+    const admin = await prisma.user.findUnique({
       where: { username: "admin" },
-      select: { id: true },
+      select: { id: true, password: true },
     });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash("***REMOVED***", 10);
+    if (!admin) {
+      const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
       await prisma.user.create({
         data: {
           username: "admin",
@@ -50,15 +61,22 @@ async function ensureAdminUser() {
           role: "admin"
         }
       });
-      console.log("Seeded default admin user (admin / ***REMOVED***)");
+      console.log("Seeded admin user from ADMIN_PASSWORD");
+    } else if (!(await bcrypt.compare(ADMIN_PASSWORD, admin.password))) {
+      // Ghi đè mật khẩu cũ trong DB để mật khẩu trước đây không còn dùng được
+      await prisma.user.update({
+        where: { id: admin.id },
+        data: { password: await bcrypt.hash(ADMIN_PASSWORD, 10) },
+      });
+      console.log("Synced admin password from ADMIN_PASSWORD");
     }
   } catch (err) {
-    console.error("Error ensuring default admin user:", err);
+    console.error("Error ensuring admin user:", err);
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "***REMOVED***",
+  secret: AUTH_SECRET,
   providers: [
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ? [
@@ -121,9 +139,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Ưu tiên 1: Đảm bảo tài khoản admin luôn đăng nhập được trên mọi môi trường (kể cả Vercel SQLite / serverless)
+        // Tài khoản admin chỉ đăng nhập bằng ADMIN_PASSWORD; thiếu biến này thì tắt đăng nhập admin
+        if (credentials.username === "admin" && !ADMIN_PASSWORD) {
+          console.error("ADMIN_PASSWORD chưa được cấu hình, từ chối đăng nhập admin");
+          return null;
+        }
         const isMasterAdmin =
           credentials.username === "admin" &&
-          (credentials.password === (process.env.ADMIN_PASSWORD || "***REMOVED***"));
+          !!ADMIN_PASSWORD &&
+          safeEqual(credentials.password, ADMIN_PASSWORD);
 
         if (isMasterAdmin) {
           try {
