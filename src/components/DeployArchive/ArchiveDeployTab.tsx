@@ -264,11 +264,10 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
     formData.append("app_domain", finalDomain);
     formData.append("ai_provider", selectedAiProvider);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
+    // Gửi qua API route của Next để server gắn API key, không gọi thẳng backend từ trình duyệt
     const targetUrl = withDatabase
-      ? `${baseUrl}/api/deploy-archive-with-db`
-      : `${baseUrl}/api/deploy-archive`;
+      ? `/api/deploy-archive-with-db`
+      : `/api/deploy-archive`;
 
     if (withDatabase) {
       formData.append("db_type", selectedDb);
@@ -315,6 +314,7 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
               new Error(
                 data?.detail ||
                   data?.message ||
+                  data?.error ||
                   `Lỗi máy chủ (${xhr.status}): ${xhr.statusText || "Không rõ nguyên nhân"}`
               )
             );

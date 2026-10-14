@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
       ai_provider,
     } = body;
 
+    const access = await requireAppAccess(String(app_name || ''));
+    if (access instanceof NextResponse) return access;
+
     if (!app_name || !message) {
       return NextResponse.json(
         { error: 'Thiếu tham số app_name hoặc message' },
@@ -19,10 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
-    const backendRes = await fetch(`${baseUrl}/api/ai-debug/chat`, {
+    const backendRes = await backendFetch(`/api/ai-debug/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

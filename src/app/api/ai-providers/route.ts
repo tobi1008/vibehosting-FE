@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireUser } from '@/lib/backend';
 
 export const DEFAULT_AI_PROVIDERS = [
   {
@@ -40,11 +41,12 @@ export const DEFAULT_AI_PROVIDERS = [
 ];
 
 export async function GET() {
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
+  const user = await requireUser();
+  if (user instanceof NextResponse) return user;
 
-    const res = await fetch(`${baseUrl}/api/ai-providers`, {
+  try {
+
+    const res = await backendFetch(`/api/ai-providers`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     });

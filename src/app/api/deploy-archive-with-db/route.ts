@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppNameAvailable } from '@/lib/backend';
 
 export async function POST(req: Request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
     const formData = await req.formData();
 
-    const res = await fetch(`${baseUrl}/api/deploy-archive-with-db`, {
+    const guard = await requireAppNameAvailable(String(formData.get('app_name') || '').trim());
+    if (guard instanceof NextResponse) return guard;
+
+    const res = await backendFetch(`/api/deploy-archive-with-db`, {
       method: 'POST',
       body: formData,
     });

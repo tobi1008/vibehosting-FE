@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseGitHubRepoUrl, stagedProjectFiles } from '@/lib/projectFiles';
 import { Octokit } from '@octokit/rest';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 async function getExistingProjectFile(appName: string, filePath: string): Promise<string | null> {
   try {
@@ -49,11 +50,12 @@ export async function POST(
 ) {
   try {
     const { appName } = await context.params;
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
     const body = await req.json();
     const { actions = [] } = body;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // Normalize actions so backend receives required path and content for edit_file
     const normalizedActions = await Promise.all(
@@ -161,7 +163,7 @@ export async function POST(
       })
     );
 
-    const backendRes = await fetch(`${baseUrl}/api/ai-debug/${appName}/execute`, {
+    const backendRes = await backendFetch(`/api/ai-debug/${appName}/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

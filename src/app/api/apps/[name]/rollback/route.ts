@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function POST(
   req: Request,
@@ -7,6 +8,9 @@ export async function POST(
   try {
     const resolvedParams = await params;
     const appName = decodeURIComponent(resolvedParams.name);
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
 
     if (!appName) {
       return NextResponse.json(
@@ -18,10 +22,7 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const { component, revision } = body;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
-    const backendRes = await fetch(`${baseUrl}/api/apps/${encodeURIComponent(appName)}/rollback`, {
+    const backendRes = await backendFetch(`/api/apps/${encodeURIComponent(appName)}/rollback`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

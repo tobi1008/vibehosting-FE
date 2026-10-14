@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, stagedProjectFiles, isBinaryFile } from '@/lib/projectFiles';
 import { getOrRefreshUserGithubToken } from '@/lib/githubToken';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function GET(
   req: Request,
@@ -12,6 +13,9 @@ export async function GET(
 ) {
   try {
     const { name: appName } = await context.params;
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
     const { searchParams } = new URL(req.url);
     const filePath = searchParams.get('path');
 
@@ -32,8 +36,6 @@ export async function GET(
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // 1. Check if file is currently staged / modified in memory
     if (stagedProjectFiles[appName] && filePath in stagedProjectFiles[appName]) {
@@ -46,13 +48,11 @@ export async function GET(
 
     // 2. Try proxying to remote backend (https://api.quyenlt.com/api/...)
     try {
-      let backendRes = await fetch(
-        `${baseUrl}/api/project/${appName}/file?path=${encodeURIComponent(filePath)}`,
+      let backendRes = await backendFetch(`/api/project/${appName}/file?path=${encodeURIComponent(filePath)}`,
         { cache: 'no-store' }
       );
       if (!backendRes.ok && backendRes.status === 404) {
-        backendRes = await fetch(
-          `${baseUrl}/api/projects/${appName}/file?path=${encodeURIComponent(filePath)}`,
+        backendRes = await backendFetch(`/api/projects/${appName}/file?path=${encodeURIComponent(filePath)}`,
           { cache: 'no-store' }
         );
       }
@@ -155,6 +155,9 @@ export async function PUT(
 ) {
   try {
     const { name: appName } = await context.params;
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
     const body = await req.json();
     const { path: filePath, content } = body;
 
@@ -165,8 +168,6 @@ export async function PUT(
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // 1. Save in staged memory cache
     if (!stagedProjectFiles[appName]) {
@@ -176,13 +177,13 @@ export async function PUT(
 
     // 2. Try proxying PUT to remote backend if available
     try {
-      let backendRes = await fetch(`${baseUrl}/api/project/${appName}/file`, {
+      let backendRes = await backendFetch(`/api/project/${appName}/file`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, content }),
       });
       if (!backendRes.ok && backendRes.status === 404) {
-        backendRes = await fetch(`${baseUrl}/api/projects/${appName}/file`, {
+        backendRes = await backendFetch(`/api/projects/${appName}/file`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: filePath, content }),

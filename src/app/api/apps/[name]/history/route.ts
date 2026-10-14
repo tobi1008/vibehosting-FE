@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function GET(
   req: Request,
@@ -7,6 +8,9 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const appName = decodeURIComponent(resolvedParams.name);
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
 
     if (!appName) {
       return NextResponse.json(
@@ -18,15 +22,12 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const component = searchParams.get('component');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
-    let targetUrl = `${baseUrl}/api/apps/${encodeURIComponent(appName)}/history`;
+    let targetUrl = `/api/apps/${encodeURIComponent(appName)}/history`;
     if (component) {
       targetUrl += `?component=${encodeURIComponent(component)}`;
     }
 
-    const backendRes = await fetch(targetUrl, {
+    const backendRes = await backendFetch(targetUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

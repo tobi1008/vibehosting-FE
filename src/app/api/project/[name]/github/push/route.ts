@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, stagedProjectFiles } from '@/lib/projectFiles';
 import { getOrRefreshUserGithubToken, saveUserGithubTokens } from '@/lib/githubToken';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 // Helper to detect environment/secret files that should NEVER be committed to git
 function isEnvSecretFile(filePath: string): boolean {
@@ -280,6 +281,9 @@ export async function POST(
 ) {
   try {
     const { name: appName } = await context.params;
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
     const body = await req.json();
     const {
       githubToken,
@@ -311,12 +315,10 @@ export async function POST(
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
 
     // 1. Try remote Backend API endpoint first
     try {
-      let backendRes = await fetch(`${baseUrl}/api/project/${appName}/github/push`, {
+      let backendRes = await backendFetch(`/api/project/${appName}/github/push`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -331,7 +333,7 @@ export async function POST(
       });
 
       if (!backendRes.ok && backendRes.status === 404) {
-        backendRes = await fetch(`${baseUrl}/api/projects/${appName}/github/push`, {
+        backendRes = await backendFetch(`/api/projects/${appName}/github/push`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -576,7 +578,7 @@ export async function POST(
 
     if (autoRebuild) {
       try {
-        fetch(`${baseUrl}/api/apps/${appName}/redeploy`, { method: 'POST' }).catch(() => {});
+        backendFetch(`/api/apps/${appName}/redeploy`, { method: 'POST' }).catch(() => {});
       } catch (e) {}
     }
 

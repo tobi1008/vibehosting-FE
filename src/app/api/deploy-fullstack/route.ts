@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppNameAvailable } from '@/lib/backend';
 
 async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
   if (!repoUrl) return false;
@@ -18,10 +19,10 @@ async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
 
 export async function POST(req: Request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
     const formData = await req.formData();
+
+    const guard = await requireAppNameAvailable(String(formData.get('app_name') || '').trim());
+    if (guard instanceof NextResponse) return guard;
 
     // Bảo mật: Kiểm tra nếu cả BE repo và FE repo đều là Public
     const beRepo = formData.get('be_repo_url') as string;
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const res = await fetch(`${baseUrl}/api/deploy-fullstack`, {
+    const res = await backendFetch(`/api/deploy-fullstack`, {
       method: 'POST',
       body: formData,
     });

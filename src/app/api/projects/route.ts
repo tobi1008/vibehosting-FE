@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { backendFetch } from '@/lib/backend';
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   try {
@@ -96,6 +97,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Tên app là định danh duy nhất trên K3s, không cho trùng với app của người khác
+    const takenByOther = await prisma.project.findFirst({
+      where: { app_name, NOT: { userId } },
+      select: { id: true },
+    });
+    if (takenByOther) {
+      return NextResponse.json({ error: "Tên ứng dụng đã được người khác sử dụng" }, { status: 409 });
+    }
+
     // Check if project already exists for this user, if so update it
     const existing = await prisma.project.findFirst({
       where: { app_name, userId },
@@ -137,9 +147,7 @@ export async function POST(req: Request) {
 
       // Default auto_cicd to false on backend config for newly created projects
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
-        const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, "");
-        fetch(`${baseUrl}/api/apps/${app_name}/config`, {
+        backendFetch(`/api/apps/${app_name}/config`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ auto_cicd: false }),

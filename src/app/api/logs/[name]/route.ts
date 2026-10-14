@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function GET(
   req: Request,
@@ -8,16 +9,16 @@ export async function GET(
     const resolvedParams = await params;
     const appName = decodeURIComponent(resolvedParams.name);
 
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
+
     if (!appName) {
       return NextResponse.json({ error: 'Thiếu tên ứng dụng' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
+    const targetUrl = `/api/logs/${encodeURIComponent(appName)}`;
 
-    const targetUrl = `${baseUrl}/api/logs/${encodeURIComponent(appName)}`;
-
-    const res = await fetch(targetUrl, {
+    const res = await backendFetch(targetUrl, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     });

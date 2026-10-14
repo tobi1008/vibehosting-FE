@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppNameAvailable } from '@/lib/backend';
 
 async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
   if (!repoUrl) return false;
@@ -18,10 +19,10 @@ async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
 
 export async function POST(req: Request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
     const body = await req.json();
+
+    const guard = await requireAppNameAvailable(String(body?.app_name || '').trim());
+    if (guard instanceof NextResponse) return guard;
 
     // Bảo mật: Nếu repo là Public, loại bỏ token để bảo vệ an toàn, tránh lộ token
     if (body?.repo_url && body?.github_token) {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const res = await fetch(`${baseUrl}/api/deploy`, {
+    const res = await backendFetch(`/api/deploy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

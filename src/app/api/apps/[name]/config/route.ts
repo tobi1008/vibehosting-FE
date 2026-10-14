@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 export async function GET(
   req: Request,
@@ -8,14 +9,14 @@ export async function GET(
     const resolvedParams = await params;
     const appName = decodeURIComponent(resolvedParams.name);
 
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
+
     if (!appName) {
       return NextResponse.json({ error: 'Thiếu tên ứng dụng' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
-    const res = await fetch(`${baseUrl}/api/apps/${encodeURIComponent(appName)}/config`, {
+    const res = await backendFetch(`/api/apps/${encodeURIComponent(appName)}/config`, {
       cache: 'no-store',
     });
 
@@ -38,16 +39,16 @@ export async function POST(
     const resolvedParams = await params;
     const appName = decodeURIComponent(resolvedParams.name);
 
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
+
     if (!appName) {
       return NextResponse.json({ error: 'Thiếu tên ứng dụng' }, { status: 400 });
     }
 
     const body = await req.json().catch(() => ({}));
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-
-    const res = await fetch(`${baseUrl}/api/apps/${encodeURIComponent(appName)}/config`, {
+    const res = await backendFetch(`/api/apps/${encodeURIComponent(appName)}/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { parseGitHubRepoUrl, buildTreeFromPaths, stagedProjectFiles } from '@/lib/projectFiles';
 import { getOrRefreshUserGithubToken } from '@/lib/githubToken';
+import { backendFetch, requireAppAccess } from '@/lib/backend';
 
 // Helper to fetch git tree items from a GitHub repo
 async function fetchRepoTreeItems(
@@ -66,14 +67,15 @@ export async function GET(
 ) {
   try {
     const { name: appName } = await context.params;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
 
     // 1. Try to proxy to remote backend endpoint first (https://api.quyenlt.com/api/...)
     try {
-      let backendRes = await fetch(`${baseUrl}/api/project/${appName}/files`, { cache: 'no-store' });
+      let backendRes = await backendFetch(`/api/project/${appName}/files`, { cache: 'no-store' });
       if (!backendRes.ok && backendRes.status === 404) {
-        backendRes = await fetch(`${baseUrl}/api/projects/${appName}/files`, { cache: 'no-store' });
+        backendRes = await backendFetch(`/api/projects/${appName}/files`, { cache: 'no-store' });
       }
       if (backendRes.ok) {
         const data = await backendRes.json();

@@ -3,6 +3,17 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
+import { backendFetch, getBackendBaseUrl, requireAppAccess } from '@/lib/backend';
+
+function webhookConfig(url: string) {
+  return {
+    url,
+    content_type: 'json',
+    insecure_ssl: '0',
+    // Cùng giá trị GITHUB_WEBHOOK_SECRET với backend; GitHub dùng nó để ký X-Hub-Signature-256
+    ...(process.env.GITHUB_WEBHOOK_SECRET ? { secret: process.env.GITHUB_WEBHOOK_SECRET } : {}),
+  };
+}
 
 function parseGitHubRepoUrl(repoUrl: string): { owner: string; repo: string } | null {
   try {
@@ -28,13 +39,14 @@ export async function GET(
     }
 
     const { name: appName } = await context.params;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
 
     // Get backend config
     let autoCicd = false;
     try {
-      const res = await fetch(`${baseUrl}/api/apps/${appName}/config`);
+      const res = await backendFetch(`/api/apps/${appName}/config`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.data && typeof data.data.auto_cicd === 'boolean') {
@@ -58,13 +70,13 @@ export async function GET(
     });
 
     const hasGithubToken = Boolean(user?.githubToken);
-    const targetWebhookUrl = `${baseUrl}/api/webhooks/github/${appName}`;
+    const targetWebhookUrl = `${getBackendBaseUrl()}/api/webhooks/github/${appName}`;
 
     // If project has auto_cicd as false in database, always enforce false and sync backend
     if (project && !project.auto_cicd) {
       if (autoCicd) {
         autoCicd = false;
-        fetch(`${baseUrl}/api/apps/${appName}/config`, {
+        backendFetch(`/api/apps/${appName}/config`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ auto_cicd: false }),
@@ -84,9 +96,22 @@ export async function GET(
             (h: any) => h.config?.url === targetWebhookUrl && h.active
           );
 
+          // Webhook tạo trước khi có secret: bổ sung secret để backend xác minh được chữ ký
+          const unsignedHook = webhooks.find(
+            (h: any) => h.config?.url === targetWebhookUrl && h.active && !h.config?.secret
+          );
+          if (unsignedHook && process.env.GITHUB_WEBHOOK_SECRET) {
+            await octokit.rest.repos.updateWebhook({
+              owner: repoInfo.owner,
+              repo: repoInfo.repo,
+              hook_id: unsignedHook.id,
+              config: webhookConfig(targetWebhookUrl),
+            }).catch((e: any) => console.error('Failed to add webhook secret:', e));
+          }
+
           if (!hasActiveHook) {
             autoCicd = false;
-            fetch(`${baseUrl}/api/apps/${appName}/config`, {
+            backendFetch(`/api/apps/${appName}/config`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ auto_cicd: false }),
@@ -128,6 +153,9 @@ export async function POST(
     }
 
     const { name: appName } = await context.params;
+
+    const access = await requireAppAccess(appName);
+    if (access instanceof NextResponse) return access;
     const body = await req.json();
     const { auto_cicd } = body;
 
@@ -135,12 +163,10 @@ export async function POST(
       return NextResponse.json({ error: 'auto_cicd must be a boolean' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.quyenlt.com/api/deploy';
-    const baseUrl = apiUrl.replace(/\/api\/deploy\/?$/, '');
-    const targetWebhookUrl = `${baseUrl}/api/webhooks/github/${appName}`;
+    const targetWebhookUrl = `${getBackendBaseUrl()}/api/webhooks/github/${appName}`;
 
     // 1. Update backend config first
-    const backendRes = await fetch(`${baseUrl}/api/apps/${appName}/config`, {
+    const backendRes = await backendFetch(`/api/apps/${appName}/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ auto_cicd }),
@@ -200,14 +226,14 @@ export async function POST(
           if (auto_cicd) {
             // Enable webhook
             if (existingHook) {
-              if (!existingHook.active) {
-                await octokit.rest.repos.updateWebhook({
-                  owner,
-                  repo,
-                  hook_id: existingHook.id,
-                  active: true,
-                });
-              }
+              // Luôn cập nhật config để webhook cũ (tạo trước khi có secret) cũng được ký
+              await octokit.rest.repos.updateWebhook({
+                owner,
+                repo,
+                hook_id: existingHook.id,
+                active: true,
+                config: webhookConfig(targetWebhookUrl),
+              });
             } else {
               await octokit.rest.repos.createWebhook({
                 owner,
@@ -215,11 +241,7 @@ export async function POST(
                 name: 'web',
                 active: true,
                 events: ['push'],
-                config: {
-                  url: targetWebhookUrl,
-                  content_type: 'json',
-                  insecure_ssl: '0',
-                },
+                config: webhookConfig(targetWebhookUrl),
               });
             }
             webhookSynced = true;
