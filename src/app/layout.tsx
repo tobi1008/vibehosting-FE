@@ -20,13 +20,32 @@ export const metadata: Metadata = {
   description: "Deploy and manage your projects with Vibe Hosting",
 };
 
+const themeInitScript = `
+(function() {
+  try {
+    var saved = localStorage.getItem('vibe_theme');
+    var mode = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'dark';
+    var resolved = mode === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : mode;
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(resolved);
+    document.documentElement.style.colorScheme = resolved;
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col text-foreground bg-background">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col text-foreground bg-background transition-colors duration-200">
         <Providers>
           <ProjectProvider>
             <Navbar />

@@ -5,6 +5,7 @@ import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Triangle, LogOut, User, Users, ShieldAlert, Loader2, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -88,7 +89,9 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <ThemeToggle variant="segmented" />
+
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}

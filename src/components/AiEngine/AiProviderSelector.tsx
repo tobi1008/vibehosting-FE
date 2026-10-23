@@ -29,11 +29,11 @@ export function getProviderVisual(id: string) {
   if (id === 'claude') {
     return {
       icon: <Terminal className="w-4 h-4" />,
-      dotColor: 'bg-amber-400',
-      iconContainer: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-      badgeClass: 'bg-amber-500/10 text-amber-300 border border-amber-500/25',
+      dotColor: 'bg-amber-500 dark:bg-amber-400',
+      iconContainer: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25',
+      badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25',
       selectedCard: 'border-amber-500/60 bg-amber-500/5 shadow-xs ring-1 ring-amber-500/30',
-      activeCheck: 'text-amber-400',
+      activeCheck: 'text-amber-600 dark:text-amber-400',
       shortTag: 'Opus 5.5',
       shortName: 'Claude Code',
     };
@@ -41,11 +41,11 @@ export function getProviderVisual(id: string) {
   if (id === 'hermes') {
     return {
       icon: <Bot className="w-4 h-4" />,
-      dotColor: 'bg-blue-400',
-      iconContainer: 'bg-blue-500/15 text-blue-400 border border-blue-500/25',
-      badgeClass: 'bg-blue-500/10 text-blue-300 border border-blue-500/25',
+      dotColor: 'bg-blue-500 dark:bg-blue-400',
+      iconContainer: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25',
+      badgeClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25',
       selectedCard: 'border-blue-500/60 bg-blue-500/5 shadow-xs ring-1 ring-blue-500/30',
-      activeCheck: 'text-blue-400',
+      activeCheck: 'text-blue-600 dark:text-blue-400',
       shortTag: 'Open-Source',
       shortName: 'Hermes Agent',
     };
@@ -53,11 +53,11 @@ export function getProviderVisual(id: string) {
   // default: 'agy'
   return {
     icon: <Sparkles className="w-4 h-4" />,
-    dotColor: 'bg-emerald-400',
-    iconContainer: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
-    badgeClass: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/25',
+    dotColor: 'bg-emerald-500 dark:bg-emerald-400',
+    iconContainer: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25',
+    badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25',
     selectedCard: 'border-emerald-500/60 bg-emerald-500/5 shadow-xs ring-1 ring-emerald-500/30',
-    activeCheck: 'text-emerald-400',
+    activeCheck: 'text-emerald-600 dark:text-emerald-400',
     shortTag: 'Nhanh (5-15s)',
     shortName: 'Google Antigravity',
   };

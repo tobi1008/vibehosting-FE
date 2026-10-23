@@ -19,6 +19,7 @@ import {
 import { FileTree, isBinaryFile, getFileIcon } from './FileTree';
 import { PushToGithubModal, PushSuccessResult } from './PushToGithubModal';
 import { FileTreeNode, parseGitHubRepoUrl } from '@/lib/projectFiles';
+import { useTheme } from '@/lib/ThemeContext';
 
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import('@monaco-editor/react'), {
@@ -45,6 +46,7 @@ interface ToastMessage {
 }
 
 export function CodeEditorTab({ appName, project }: CodeEditorTabProps) {
+  const { resolvedTheme } = useTheme();
   const [tree, setTree] = useState<FileTreeNode[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(true);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -464,7 +466,7 @@ export function CodeEditorTab({ appName, project }: CodeEditorTabProps) {
         </div>
 
         {/* Right Column: Code Editor (75% - 78%) */}
-        <div className="flex-1 h-full bg-[#1e1e1e] relative overflow-hidden flex flex-col">
+        <div className="flex-1 h-full bg-card dark:bg-[#1e1e1e] relative overflow-hidden flex flex-col">
           {isLoadingFile ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-xs gap-3">
               <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -501,7 +503,7 @@ export function CodeEditorTab({ appName, project }: CodeEditorTabProps) {
               language={getEditorLanguage(selectedPath)}
               value={currentContent}
               onChange={handleEditorChange}
-              theme="vs-dark"
+              theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
               options={{
                 fontSize: 13,
                 fontFamily: "'Fira Code', Menlo, Monaco, 'Courier New', monospace",

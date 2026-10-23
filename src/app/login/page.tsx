@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Triangle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 import Link from 'next/link';
 
@@ -52,6 +53,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Top right Theme Toggle */}
+      <div className="absolute top-5 right-5 z-20">
+        <ThemeToggle variant="segmented" />
+      </div>
+
       {/* Background decorations */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[100px]"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[100px]"></div>

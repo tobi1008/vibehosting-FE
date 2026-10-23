@@ -944,13 +944,13 @@ export default function ProjectDetailPage({
                   </div>
 
                   {/* Component Filter Buttons (Toàn bộ / Backend Pod / Frontend Pod) */}
-                  <div className="flex items-center bg-black/60 p-0.5 rounded-lg border border-border/80 text-[11px]">
+                  <div className="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 text-[11px]">
                     <button
                       onClick={() => setPodComponent('all')}
                       className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                         podComponent === 'all'
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-zinc-800 text-zinc-100'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       Toàn bộ
@@ -963,7 +963,7 @@ export default function ProjectDetailPage({
                       className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                         podComponent === 'be'
                           ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                          : 'text-muted-foreground hover:text-foreground'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                       title="Chỉ xem Pod Backend (GET /api/pod-logs/{app_name}?component=be&lines=200)"
                     >
@@ -977,7 +977,7 @@ export default function ProjectDetailPage({
                       className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                         podComponent === 'fe'
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'text-muted-foreground hover:text-foreground'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                       title="Chỉ xem Pod Frontend (GET /api/pod-logs/{app_name}?component=fe&lines=200)"
                     >
@@ -987,13 +987,13 @@ export default function ProjectDetailPage({
 
                   {/* Search / Filter in Logs */}
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type="text"
                       placeholder="Lọc từ khóa (ERROR, INFO...)"
                       value={podSearch}
                       onChange={(e) => setPodSearch(e.target.value)}
-                      className="bg-black/50 border border-border/80 rounded-md pl-8 pr-3 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-foreground/60 w-40 sm:w-52 transition-all"
+                      className="bg-zinc-900 border border-zinc-700 rounded-md pl-8 pr-3 py-1 text-xs text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 w-40 sm:w-52 transition-all"
                     />
                   </div>
                 </div>
@@ -1004,7 +1004,7 @@ export default function ProjectDetailPage({
                   <select
                     value={linesCount}
                     onChange={(e) => setLinesCount(Number(e.target.value))}
-                    className="bg-black/50 border border-border/80 text-muted-foreground hover:text-foreground text-[11px] rounded-md px-2 py-1 outline-none cursor-pointer"
+                    className="bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-zinc-100 text-[11px] rounded-md px-2 py-1 outline-none cursor-pointer"
                   >
                     <option value="50">50 dòng</option>
                     <option value="100">100 dòng</option>
@@ -1173,7 +1173,7 @@ export default function ProjectDetailPage({
                   placeholder="Lọc tiến trình build..."
                   value={buildSearch}
                   onChange={(e) => setBuildSearch(e.target.value)}
-                  className="bg-black/50 border border-border/80 rounded-md pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-foreground/60 w-56 transition-all"
+                  className="bg-card dark:bg-black/50 border border-border/80 rounded-md pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-foreground/60 w-56 transition-all"
                 />
               </div>
             </div>
