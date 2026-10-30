@@ -69,7 +69,7 @@ export function AiProviderSelector({
   value,
   onChange,
   title = 'Chọn Bộ não AI Hỗ trợ Triển khai:',
-  subtitle = 'Tự động phân tích cấu trúc, sinh cấu hình K3s và xử lý build',
+  subtitle = 'Sinh cấu hình Nixpacks & K3s. Hermes Agent tự kiểm tra tổng thể sau khi triển khai',
 }: AiProviderSelectorProps) {
   const {
     selectedProvider: hookProvider,
@@ -247,7 +247,7 @@ export function AiProviderSelector({
   }
 
   // ----------------------------------------------------------------------
-  // VARIANT: CARDS (Radio Cards in Deploy Forms - 3 Columns)
+  // VARIANT: CARDS (Radio Cards in Deploy Forms - 2 Columns: Antigravity / Claude Code)
   // ----------------------------------------------------------------------
   return (
     <div className={`flex flex-col gap-3 pt-4 border-t border-border ${className}`}>
@@ -263,7 +263,7 @@ export function AiProviderSelector({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {displayProviders.map((p) => {
           const isSelected = selected === p.id;
           const visual = getProviderVisual(p.id);

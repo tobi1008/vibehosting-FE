@@ -15,10 +15,8 @@ export const FALLBACK_AI_PROVIDERS: AiProvider[] = [
     id: 'agy',
     name: 'Google Antigravity (Gemini Flash)',
     badge: 'Khuyên dùng - Nhanh (5-15s)',
-    description: 'Thực thi CLI trực tiếp trên VPS, tự động dự phòng 5 tầng Gemini Flash',
+    description: 'Viết cấu hình Nixpacks & K3s bằng CLI trên VPS, tự động dự phòng 3 tầng Gemini 3.8 Flash',
     models: [
-      'gemini-3.7-flash-high',
-      'gemini-3.7-flash-medium',
       'gemini-3.8-flash-low',
       'gemini-3.8-flash-medium',
       'gemini-3.8-flash-high',
@@ -28,28 +26,18 @@ export const FALLBACK_AI_PROVIDERS: AiProvider[] = [
     id: 'claude',
     name: 'Claude Code (Anthropic Opus/Sonnet)',
     badge: 'Trí tuệ cao cấp (Opus 5.5)',
-    description: 'Thực thi Claude Code CLI trực tiếp trên VPS với Opus 5.5, Sonnet 5.5, Haiku 5.5',
+    description: 'Viết cấu hình Nixpacks & K3s bằng Claude Code CLI trên VPS với Opus 5.5, Sonnet 5.5, Haiku 5.5',
     models: [
       'claude-opus-5-5',
       'claude-sonnet-5-5',
       'claude-haiku-5-5',
     ],
   },
-  {
-    id: 'hermes',
-    name: 'Hermes Agent (Open-Source LLMs)',
-    badge: 'Mô hình mã nguồn mở',
-    description: 'Bộ não suy luận Hermes nguyên bản gọi qua API Gateway nội bộ',
-    models: [
-      'stepfun/step-3.7-flash:free',
-      'poolside/laguna-s-2.1:free',
-      'meituan/longcat-2.5-preview:free',
-      'openrouter/free',
-    ],
-  },
 ];
 
 const STORAGE_KEY = 'vibe_ai_provider';
+// Engine được phép viết cấu hình. Lựa chọn cũ (vd: 'hermes') sẽ quay về mặc định
+const CONFIG_ENGINE_IDS = FALLBACK_AI_PROVIDERS.map((p) => p.id);
 const SYNC_EVENT = 'vibe_ai_provider_change';
 
 export function useAiProvider() {
@@ -61,8 +49,10 @@ export function useAiProvider() {
     // 1. Initial read from localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
+      if (saved && CONFIG_ENGINE_IDS.includes(saved)) {
         setSelectedProviderState(saved);
+      } else if (saved) {
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch {
       // Ignore localStorage errors
@@ -75,7 +65,7 @@ export function useAiProvider() {
       .then((data) => {
         if (!isMounted || !data) return;
         if (Array.isArray(data.providers) && data.providers.length > 0) {
-          const mergedProviders: AiProvider[] = [...data.providers];
+          const mergedProviders: AiProvider[] = data.providers.filter((p: AiProvider) => p.id !== 'hermes');
           const hasClaude = mergedProviders.some((p) => p.id === 'claude');
           if (!hasClaude) {
             const claudeDef = FALLBACK_AI_PROVIDERS.find((p) => p.id === 'claude');

@@ -575,10 +575,9 @@ export default function NewProject() {
       `> AI Engine: ${
         selectedAiProvider === 'claude'
           ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
-          : selectedAiProvider === 'hermes'
-          ? 'Hermes Agent (Open-Source LLMs)'
           : 'Google Antigravity (Gemini Flash)'
       }`,
+      "> Verifier: Hermes Agent sẽ kiểm tra tổng thể Pod / K3s sau khi triển khai",
       `> Architecture: ${
         archType === 'clean_db'
           ? 'Deploy GitHub Repo có Database (Clean Database / CMS)'
@@ -830,10 +829,9 @@ export default function NewProject() {
       `> AI Engine: ${
         selectedAiProvider === 'claude'
           ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
-          : selectedAiProvider === 'hermes'
-          ? 'Hermes Agent (Open-Source LLMs)'
           : 'Google Antigravity (Gemini Flash)'
       }`,
+      "> Verifier: Hermes Agent sẽ kiểm tra tổng thể Pod / K3s sau khi triển khai",
       `> Architecture: ${
         deployedApp.arch_type === "archive_db"
           ? "Archive Upload + Internal DB"

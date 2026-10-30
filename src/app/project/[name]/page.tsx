@@ -10,6 +10,7 @@ import { extractCurrentSessionLines } from '@/lib/deployment';
 import { CodeEditorTab } from '@/components/FileManager/CodeEditorTab';
 import { AiDebugTab } from '@/components/AiDebug/AiDebugTab';
 import { DeployHistoryTab } from '@/components/DeployHistory/DeployHistoryTab';
+import { HealthReportTab } from '@/components/HealthReport/HealthReportTab';
 import {
   ArrowLeft,
   GitBranch,
@@ -37,10 +38,11 @@ import {
   Code2,
   History,
   FolderArchive,
+  Stethoscope,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export type TabType = 'code-editor' | 'ai-debug' | 'deploy-history' | 'runtime-logs' | 'build-logs' | 'settings' | 'overview';
+export type TabType = 'code-editor' | 'ai-debug' | 'health' | 'deploy-history' | 'runtime-logs' | 'build-logs' | 'settings' | 'overview';
 
 export default function ProjectDetailPage({
   params,
@@ -675,6 +677,21 @@ export default function ProjectDetailPage({
         </button>
 
         <button
+          onClick={() => setActiveTab('health')}
+          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'health'
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Stethoscope className="w-4 h-4 text-blue-400" />
+          <span>Hermes Check</span>
+          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+            Verifier
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('deploy-history')}
           className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'deploy-history'
@@ -778,6 +795,17 @@ export default function ProjectDetailPage({
               appName={appName}
               onOpenLogs={() => setActiveTab('runtime-logs')}
             />
+          </motion.div>
+        )}
+
+        {/* TAB 0.6: HERMES VERIFIER (KIỂM TRA TỔNG THỂ SAU TRIỂN KHAI) */}
+        {activeTab === 'health' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-4"
+          >
+            <HealthReportTab appName={appName} />
           </motion.div>
         )}
 
