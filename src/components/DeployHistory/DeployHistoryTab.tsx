@@ -123,6 +123,9 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
     (Boolean(project?.be_repo_url) && Boolean(project?.fe_repo_url)) ||
     (Boolean(project?.be_domain) && Boolean(project?.fe_domain));
 
+  // Monorepo chỉ có backend: Deployment trên K3s vẫn mang tên {app}-be
+  const fixedComponent: 'be' | null = !isFullstack && project?.arch_type === 'monorepo' ? 'be' : null;
+
   // Component selector state: 'be' | 'fe' (if fullstack)
   const [selectedComponent, setSelectedComponent] = useState<'be' | 'fe'>('be');
 
@@ -152,6 +155,8 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
         const queryParams = new URLSearchParams();
         if (isFullstack) {
           queryParams.set('component', selectedComponent);
+        } else if (fixedComponent) {
+          queryParams.set('component', fixedComponent);
         }
 
         const url = `/api/apps/${encodeURIComponent(appName)}/history${
@@ -164,7 +169,7 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
         if (!res.ok) {
           if (res.status === 404 || data.status === 'not_found') {
             setHistoryList([]);
-            setTargetDeployment(data.target || appName);
+            setTargetDeployment(data.target || (fixedComponent ? `${appName}-${fixedComponent}` : appName));
             setErrorMsg(null);
             return;
           }
@@ -173,7 +178,10 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
 
         const items: HistoryItem[] = Array.isArray(data.history) ? data.history : [];
         setHistoryList(items);
-        setTargetDeployment(data.target || (isFullstack ? `${appName}-${selectedComponent}` : appName));
+        setTargetDeployment(
+          data.target ||
+            (isFullstack ? `${appName}-${selectedComponent}` : fixedComponent ? `${appName}-${fixedComponent}` : appName)
+        );
       } catch (err: any) {
         console.error('Fetch deploy history error:', err);
         setErrorMsg(err?.message || 'Không thể tải lịch sử triển khai');
@@ -182,7 +190,7 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
         setIsRefreshing(false);
       }
     },
-    [appName, isFullstack, selectedComponent]
+    [appName, isFullstack, selectedComponent, fixedComponent]
   );
 
   useEffect(() => {
@@ -209,7 +217,7 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          component: isFullstack ? selectedComponent : null,
+          component: isFullstack ? selectedComponent : fixedComponent,
           revision: selectedRevision,
         }),
       });
