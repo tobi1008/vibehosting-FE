@@ -116,6 +116,9 @@ interface DeployHistoryTabProps {
   project?: Project;
 }
 
+const HISTORY_POLL_INTERVAL_MS = 3000;
+const HISTORY_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
 export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
   // Check if project is fullstack (has both BE and FE)
   const isFullstack =
@@ -146,10 +149,13 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const fetchHistory = useCallback(
-    async (isManualRefresh = false) => {
-      if (isManualRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      setErrorMsg(null);
+    // silent: tự làm mới nền, không hiện trạng thái đang tải
+    async (isManualRefresh = false, silent = false) => {
+      if (!silent) {
+        if (isManualRefresh) setIsRefreshing(true);
+        else setIsLoading(true);
+        setErrorMsg(null);
+      }
 
       try {
         const queryParams = new URLSearchParams();
@@ -252,6 +258,21 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
   const currentActiveRevision =
     historyList.find((h) => h.is_current)?.revision ?? (historyList.length > 0 ? historyList[0].revision : null);
   const currentItem = historyList.find((h) => h.revision === currentActiveRevision);
+
+  // Sau rollback / deploy mới, Pod cần vài giây để Ready: tự làm mới cho tới khi hết trạng thái "đang khởi động"
+  const isCurrentStarting = currentItem?.state === 'starting';
+  useEffect(() => {
+    if (!isCurrentStarting) return;
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      if (Date.now() - startedAt > HISTORY_POLL_TIMEOUT_MS) {
+        clearInterval(timer);
+        return;
+      }
+      fetchHistory(false, true);
+    }, HISTORY_POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [isCurrentStarting, fetchHistory]);
 
   return (
     <div className="flex flex-col gap-6">
