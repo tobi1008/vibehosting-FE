@@ -44,6 +44,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export type TabType = 'code-editor' | 'ai-debug' | 'health' | 'deploy-history' | 'runtime-logs' | 'build-logs' | 'settings' | 'overview';
 
+const PROJECT_TABS: { id: TabType; label: string; hint: string; icon: typeof Code2; iconClass: string }[] = [
+  { id: 'overview', label: 'Tổng quan', hint: 'Thông tin triển khai, tên miền, kiến trúc', icon: Activity, iconClass: '' },
+  { id: 'code-editor', label: 'Mã nguồn', hint: 'File Manager, chỉnh sửa code và đẩy lên GitHub', icon: Code2, iconClass: 'text-indigo-400' },
+  { id: 'build-logs', label: 'Build Logs', hint: 'Tiến trình clone, build image và apply K3s', icon: Terminal, iconClass: 'text-sky-400' },
+  { id: 'runtime-logs', label: 'Runtime Logs', hint: 'Log trực tiếp từ Pod đang chạy', icon: Cpu, iconClass: 'text-emerald-400' },
+  { id: 'health', label: 'Hermes Check', hint: 'Hermes Agent kiểm tra tổng thể sau triển khai', icon: Stethoscope, iconClass: 'text-blue-400' },
+  { id: 'ai-debug', label: 'AI Debug', hint: 'AI DevOps Agent chẩn đoán và sửa lỗi', icon: Sparkles, iconClass: 'text-amber-400' },
+  { id: 'deploy-history', label: 'Lịch sử', hint: 'Lịch sử triển khai và Rollback', icon: History, iconClass: 'text-violet-400' },
+  { id: 'settings', label: 'Cài đặt', hint: 'Settings & CI/CD', icon: Sliders, iconClass: '' },
+];
+
 export default function ProjectDetailPage({
   params,
 }: {
@@ -644,120 +655,31 @@ export default function ProjectDetailPage({
         )}
       </div>
 
-      {/* Tabs Navigation (Railway / Vercel style) */}
-      <div className="flex items-center gap-2 border-b border-border mt-6 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('code-editor')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'code-editor'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Code2 className="w-4 h-4 text-indigo-400" />
-          <span>Mã nguồn</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
-            Editor
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('ai-debug')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'ai-debug'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>AI Debug</span>
-          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
-            AI DevOps Agent
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('health')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'health'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Stethoscope className="w-4 h-4 text-blue-400" />
-          <span>Hermes Check</span>
-          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
-            Verifier
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('deploy-history')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'deploy-history'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <History className="w-4 h-4 text-violet-400" />
-          <span>Lịch sử Triển khai</span>
-          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-mono">
-            Rollback
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('runtime-logs')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'runtime-logs'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Cpu className="w-4 h-4 text-emerald-400" />
-          <span>Runtime Logs</span>
-          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Live
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('build-logs')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'build-logs'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Terminal className="w-4 h-4 text-sky-400" />
-          <span>Build Logs</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'settings'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Sliders className="w-4 h-4" />
-          Settings & CI/CD
-        </button>
-
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'overview'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          Overview
-        </button>
-      </div>
+      {/* Tabs Navigation: lưới đủ chỗ cho toàn bộ chức năng, không cần cuộn ngang */}
+      <nav className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 p-1 mt-6 rounded-xl bg-muted/40 border border-border">
+        {PROJECT_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              title={tab.hint}
+              className={`relative flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                isActive
+                  ? 'bg-background text-foreground shadow-xs border border-border'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50 border border-transparent'
+              }`}
+            >
+              <Icon className={`w-4 h-4 shrink-0 ${tab.iconClass}`} />
+              <span className="truncate">{tab.label}</span>
+              {tab.id === 'runtime-logs' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Tab Content */}
       <div className="mt-8">

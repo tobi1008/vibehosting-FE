@@ -22,15 +22,47 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project } from '@/lib/ProjectContext';
 
+export type RevisionState = 'running' | 'starting' | 'failed' | 'previous';
+
 export interface HistoryItem {
   revision: number;
   cause: string;
-  timestamp?: string | number;
-  created_at?: string;
-  createdAt?: string;
-  date?: string;
-  time?: string;
+  created_at?: string | null;
+  image?: string | null;
+  replicas?: number;
+  ready_replicas?: number;
+  is_current?: boolean;
+  // Backend xác định từ ReplicaSet thật trên K3s + kết luận của Hermes Verifier
+  state?: RevisionState;
 }
+
+// Màu và nhãn theo trạng thái thật của từng revision
+const STATE_STYLE: Record<RevisionState, { card: string; node: string; badge: string; label: string }> = {
+  running: {
+    card: 'bg-emerald-500/5 border-emerald-500/30 shadow-xs',
+    node: 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20',
+    badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    label: 'Đang chạy',
+  },
+  starting: {
+    card: 'bg-amber-500/5 border-amber-500/30',
+    node: 'bg-amber-500 text-black',
+    badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    label: 'Đang khởi động',
+  },
+  failed: {
+    card: 'bg-rose-500/5 border-rose-500/30',
+    node: 'bg-rose-500 text-white',
+    badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+    label: 'Triển khai lỗi',
+  },
+  previous: {
+    card: 'bg-background/40 hover:bg-muted/30 border-border/70',
+    node: 'bg-muted text-muted-foreground border border-border',
+    badge: 'bg-muted text-muted-foreground border-border/60',
+    label: 'Bản cũ',
+  },
+};
 
 export function formatTimestamp(timestampStr?: string | number | null) {
   if (!timestampStr) return null;
@@ -140,46 +172,7 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
         }
 
         const items: HistoryItem[] = Array.isArray(data.history) ? data.history : [];
-
-        // Load or initialize revision timestamp cache
-        const storageKey = `vibe_rev_time_${appName}_${isFullstack ? selectedComponent : 'main'}`;
-        let cachedTimeMap: Record<number, string> = {};
-        try {
-          const raw = localStorage.getItem(storageKey);
-          if (raw) cachedTimeMap = JSON.parse(raw);
-        } catch {}
-
-        const now = Date.now();
-        let hasNew = false;
-
-        const enrichedItems: HistoryItem[] = items.map((item, idx) => {
-          let timeVal = item.timestamp || item.created_at || item.createdAt || item.date;
-          if (!timeVal) {
-            if (cachedTimeMap[item.revision]) {
-              timeVal = cachedTimeMap[item.revision];
-            } else {
-              // Generate realistic stable timestamp based on revision offset
-              const estimatedTime = new Date(now - idx * 45 * 60 * 1000).toISOString();
-              timeVal = estimatedTime;
-              cachedTimeMap[item.revision] = estimatedTime;
-              hasNew = true;
-            }
-          } else {
-            cachedTimeMap[item.revision] = String(timeVal);
-          }
-          return {
-            ...item,
-            timestamp: timeVal,
-          };
-        });
-
-        if (hasNew) {
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(cachedTimeMap));
-          } catch {}
-        }
-
-        setHistoryList(enrichedItems);
+        setHistoryList(items);
         setTargetDeployment(data.target || (isFullstack ? `${appName}-${selectedComponent}` : appName));
       } catch (err: any) {
         console.error('Fetch deploy history error:', err);
@@ -231,16 +224,6 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
       setToast({ type: 'success', message: successText });
       setSelectedRevision(null);
 
-      // Record rollback timestamp for the new revision
-      const storageKey = `vibe_rev_time_${appName}_${isFullstack ? selectedComponent : 'main'}`;
-      try {
-        const raw = localStorage.getItem(storageKey);
-        const map = raw ? JSON.parse(raw) : {};
-        const nextRev = (historyList[0]?.revision || 0) + 1;
-        map[nextRev] = new Date().toISOString();
-        localStorage.setItem(storageKey, JSON.stringify(map));
-      } catch {}
-
       // Refresh list to show newly created revision
       await fetchHistory(true);
     } catch (err: any) {
@@ -257,8 +240,10 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
     return selectedComponent === 'be' ? 'Backend' : 'Frontend';
   };
 
-  // The latest revision is the first in the sorted array (highest revision number)
-  const currentActiveRevision = historyList.length > 0 ? historyList[0].revision : null;
+  // Revision đang được Deployment sử dụng (backend cũ chưa có is_current => lấy bản mới nhất)
+  const currentActiveRevision =
+    historyList.find((h) => h.is_current)?.revision ?? (historyList.length > 0 ? historyList[0].revision : null);
+  const currentItem = historyList.find((h) => h.revision === currentActiveRevision);
 
   return (
     <div className="flex flex-col gap-6">
@@ -403,33 +388,39 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
               <span className="text-muted-foreground">Tổng số phiên bản đã lưu:</span>
               <strong className="text-foreground font-mono">{historyList.length}</strong>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Phiên bản hiện tại đang xử lý lưu lượng truy cập (Traffic)</span>
-            </div>
+            {currentItem?.state === 'failed' ? (
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-[11px]">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Phiên bản hiện tại đang lỗi, hãy khôi phục về một bản đang chạy ổn định trước đó</span>
+              </div>
+            ) : currentItem?.state === 'starting' ? (
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-[11px]">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Phiên bản hiện tại đang khởi động (kéo image / tạo container)</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Phiên bản hiện tại đang xử lý lưu lượng truy cập (Traffic)</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3 relative before:absolute before:inset-0 before:left-5 before:top-4 before:bottom-4 before:w-0.5 before:bg-border/60">
-            {historyList.map((item, index) => {
+            {historyList.map((item) => {
               const isCurrent = item.revision === currentActiveRevision;
-              const timeInfo = formatTimestamp(item.timestamp);
+              const state: RevisionState = item.state || (isCurrent ? 'running' : 'previous');
+              const style = STATE_STYLE[state];
+              const timeInfo = formatTimestamp(item.created_at);
 
               return (
                 <div
                   key={item.revision}
-                  className={`relative flex items-start gap-4 p-4 rounded-xl border transition-all ${
-                    isCurrent
-                      ? 'bg-emerald-500/5 border-emerald-500/30 shadow-xs'
-                      : 'bg-background/40 hover:bg-muted/30 border-border/70'
-                  }`}
+                  className={`relative flex items-start gap-4 p-4 rounded-xl border transition-all ${style.card}`}
                 >
                   {/* Timeline Node Badge */}
                   <div
-                    className={`relative z-10 w-9 h-9 rounded-xl flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-transform ${
-                      isCurrent
-                        ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                        : 'bg-muted text-muted-foreground border border-border'
-                    }`}
+                    className={`relative z-10 w-9 h-9 rounded-xl flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-transform ${style.node}`}
                   >
                     #{item.revision}
                   </div>
@@ -442,16 +433,19 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
                           Phiên bản #{item.revision}
                         </h4>
 
-                        {isCurrent ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Phiên bản Hiện tại
-                          </span>
-                        ) : (
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60 font-mono">
-                            Revision {item.revision}
+                        {isCurrent && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-foreground border border-border/60 font-medium">
+                            Phiên bản hiện tại
                           </span>
                         )}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${style.badge}`}
+                        >
+                          {state === 'running' && <CheckCircle2 className="w-3 h-3" />}
+                          {state === 'starting' && <Loader2 className="w-3 h-3 animate-spin" />}
+                          {state === 'failed' && <AlertTriangle className="w-3 h-3" />}
+                          {style.label}
+                        </span>
 
                         {/* Date & Time Badge */}
                         {timeInfo && (
@@ -469,10 +463,12 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
                       {/* Action button */}
                       <div>
                         {isCurrent ? (
-                          <span className="text-[11px] text-emerald-400/90 font-medium px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            Đang chạy
-                          </span>
+                          state === 'running' && (
+                            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Đang phục vụ
+                            </span>
+                          )
                         ) : (
                           <button
                             type="button"
@@ -494,6 +490,14 @@ export function DeployHistoryTab({ appName, project }: DeployHistoryTabProps) {
                       <GitCommit className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
                       <span>{item.cause || 'Bản cập nhật tự động (CI/CD / Image Update)'}</span>
                     </p>
+                    {item.image && (
+                      <p className="text-[11px] font-mono text-muted-foreground/80 break-all">
+                        Image: {item.image}
+                        {typeof item.ready_replicas === 'number' && isCurrent && (
+                          <span> · Pod Ready: {item.ready_replicas}/{item.replicas ?? 0}</span>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
