@@ -264,8 +264,9 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
     formData.append("app_domain", finalDomain);
     formData.append("ai_provider", selectedAiProvider);
 
-    // Gửi qua API route của Next để server gắn API key, không gọi thẳng backend từ trình duyệt
-    const targetUrl = withDatabase
+    // Upload thẳng tới Vibe Core (không qua function Vercel, vốn giới hạn body 4,5 MB → lỗi 413).
+    // API key không lộ ra trình duyệt: server Next chỉ cấp token ngắn hạn gắn với app_name.
+    const targetPath = withDatabase
       ? `/api/deploy-archive-with-db`
       : `/api/deploy-archive`;
 
@@ -277,9 +278,20 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
     }
 
     try {
+      const tokenRes = await fetch("/api/upload-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_name: slugifiedName }),
+      });
+      const tokenData = await tokenRes.json().catch(() => null);
+      if (!tokenRes.ok || !tokenData?.token) {
+        throw new Error(tokenData?.error || `Không lấy được quyền tải lên (${tokenRes.status})`);
+      }
+
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", targetUrl);
+        xhr.open("POST", `${tokenData.upload_base_url}${targetPath}`);
+        xhr.setRequestHeader("X-Upload-Token", tokenData.token);
 
         // Upload progress tracking
         xhr.upload.onprogress = (event) => {

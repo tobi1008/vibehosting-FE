@@ -142,7 +142,7 @@ Các route trong `src/app/api/` đóng vai trò cầu nối giữa trình duyệ
 | Xác thực | `auth/[...nextauth]`, `auth/register` | Đăng nhập, đăng ký |
 | Người dùng | `user/profile`, `user/github`, `user/github/connect`, `user/github/callback`, `user/github/repos` | Hồ sơ, kết nối GitHub OAuth, danh sách repo |
 | Project | `projects`, `projects/[name]/cicd` | Danh sách project của người dùng; bật / tắt Auto Deploy và đăng ký webhook |
-| Triển khai | `deploy`, `deploy-with-db`, `deploy-fullstack`, `deploy-monorepo`, `deploy-open-source`, `deploy-archive`, `deploy-archive-with-db` | Chuyển yêu cầu triển khai tới Vibe Core |
+| Triển khai | `deploy`, `deploy-with-db`, `deploy-fullstack`, `deploy-monorepo`, `deploy-open-source`, `upload-token` | Chuyển yêu cầu triển khai tới Vibe Core. Riêng file nén được trình duyệt upload thẳng lên Vibe Core bằng token ngắn hạn do `upload-token` cấp, vì Vercel giới hạn body của function ở 4,5 MB |
 | Vận hành | `apps/[name]` (DELETE), `apps/[name]/config`, `apps/[name]/redeploy`, `apps/[name]/history`, `apps/[name]/rollback`, `logs/[name]`, `pod-logs/[name]` | Xoá app, cấu hình, build lại, lịch sử, rollback, log |
 | Mã nguồn | `project/[name]/files`, `project/[name]/file`, `project/[name]/github/push` | Duyệt, đọc, ghi file; push lên GitHub |
 | AI | `ai-providers`, `ai-debug/analyze`, `ai-debug/chat`, `ai-debug/[appName]/execute` | Danh sách AI engine, chẩn đoán, chat, thực thi hành động đã duyệt |
