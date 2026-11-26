@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TelegramLinkCard from '@/components/TelegramLinkCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound,
@@ -368,6 +369,9 @@ export default function ProfilePage() {
 
         {/* Right Column: GitHub Integration & Repositories */}
         <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Hermes trên Telegram */}
+          <TelegramLinkCard />
+
           {/* GitHub Connection Card */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
