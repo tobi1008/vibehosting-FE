@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Bot, CheckCircle2, ChevronDown, Eye, EyeOff, Loader2, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, Bot, CheckCircle2, ChevronDown, Eye, EyeOff, FileText, Loader2, Save, Trash2 } from 'lucide-react';
 
 type BotConfig = {
   configured: boolean;
@@ -36,6 +36,7 @@ export default function TelegramBotSettings({ onChange }: { onChange?: () => voi
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [guideOpen, setGuideOpen] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
 
   const applyConfig = useCallback((data: BotConfig | null, err: string) => {
     if (data) {
@@ -109,6 +110,22 @@ export default function TelegramBotSettings({ onChange }: { onChange?: () => voi
       setError(e instanceof Error ? e.message : 'Không gỡ được token');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendTestReport = async () => {
+    setSendingReport(true);
+    setError('');
+    setNotice('');
+    try {
+      const res = await fetch('/api/admin/telegram/daily-report', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Không gửi được báo cáo');
+      setNotice('Đã gửi báo cáo hằng ngày tới Telegram của bạn. Lịch gửi tự động mỗi sáng vẫn giữ nguyên.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không gửi được báo cáo');
+    } finally {
+      setSendingReport(false);
     }
   };
 
@@ -186,6 +203,19 @@ export default function TelegramBotSettings({ onChange }: { onChange?: () => voi
               {!config.butler_enabled && (
                 <p className="text-amber-500">Máy chủ đang đặt HERMES_BUTLER=0 nên bot không chạy.</p>
               )}
+              <div className="pt-2 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={sendTestReport}
+                  disabled={sendingReport}
+                  className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-50"
+                >
+                  {sendingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                  {sendingReport ? 'Đang kiểm tra và gửi…' : 'Gửi thử báo cáo hằng ngày'}
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Kiểm tra ngay rồi gửi tới Telegram của bạn (tài khoản phải đã liên kết).
+                </span>
+              </div>
             </div>
           )}
 
