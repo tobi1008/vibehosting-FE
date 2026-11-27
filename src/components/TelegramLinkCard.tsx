@@ -7,6 +7,7 @@ type TelegramStatus = {
   configured: boolean;
   linked: boolean;
   bot_username: string | null;
+  running?: boolean;
   chats: { telegram_name: string; linked_at: number }[];
 };
 
@@ -24,7 +25,7 @@ async function fetchTelegramStatus(): Promise<[TelegramStatus | null, string]> {
 }
 
 /** Thẻ liên kết Telegram với Hermes Butler (chat để debug, nhận cảnh báo và báo cáo hằng ngày) */
-export default function TelegramLinkCard() {
+export default function TelegramLinkCard({ isAdmin = false, refreshKey = 0 }: { isAdmin?: boolean; refreshKey?: number }) {
   const [status, setStatus] = useState<TelegramStatus | null>(null);
   const [linkCode, setLinkCode] = useState<LinkCode | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function TelegramLinkCard() {
     return () => {
       active = false;
     };
-  }, [applyStatus]);
+  }, [applyStatus, refreshKey]);
 
   // Trong lúc chờ người dùng mở bot, kiểm tra lại mỗi 5 giây để cập nhật "Đã liên kết"
   useEffect(() => {
@@ -128,7 +129,11 @@ export default function TelegramLinkCard() {
           <Loader2 className="w-4 h-4 animate-spin" /> Đang tải…
         </div>
       ) : status && !status.configured ? (
-        <p className="text-sm text-muted-foreground">Máy chủ chưa bật bot Telegram.</p>
+        <p className="text-sm text-muted-foreground">
+          {isAdmin
+            ? 'Chưa có bot Telegram. Nhập token bot ở mục "Cấu hình bot Telegram" phía trên trước, rồi quay lại đây để liên kết.'
+            : 'Quản trị viên chưa bật bot Telegram. Khi bot được bật, bạn sẽ liên kết được ở đây.'}
+        </p>
       ) : status?.linked ? (
         <div className="space-y-3">
           {status.chats.map((c) => (
@@ -159,9 +164,20 @@ export default function TelegramLinkCard() {
               <Unlink className="w-4 h-4" /> Hủy liên kết
             </button>
           </div>
+          <UsageTips />
         </div>
       ) : (
         <div className="space-y-3">
+          <ol className="space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
+            <li>
+              Bấm <b>Liên kết Telegram</b>, Telegram sẽ mở chat với bot
+              {status?.bot_username ? <> <b>@{status.bot_username}</b></> : null}.
+            </li>
+            <li>
+              Trong chat với bot, bấm <b>Start</b> (hoặc <b>Bắt đầu</b>). Bot sẽ báo liên kết thành công.
+            </li>
+            <li>Trang này tự chuyển sang &quot;Đã liên kết&quot;. Từ đó bạn chat với Hermes và nhận cảnh báo khi app lỗi.</li>
+          </ol>
           <button
             onClick={createCode}
             disabled={busy}
@@ -188,6 +204,24 @@ export default function TelegramLinkCard() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function UsageTips() {
+  return (
+    <div className="text-sm text-muted-foreground border-t border-border pt-3 space-y-1.5">
+      <p className="font-medium text-foreground">Nhắn cho Hermes tự nhiên, ví dụ:</p>
+      <ul className="list-disc list-inside space-y-0.5">
+        <li>&quot;app shop đang lỗi gì vậy?&quot;</li>
+        <li>&quot;xem log backend của shop&quot;</li>
+        <li>&quot;rollback shop về bản trước&quot;</li>
+      </ul>
+      <p>
+        Lệnh nhanh: <code className="px-1 bg-muted rounded">/apps</code>, <code className="px-1 bg-muted rounded">/status &lt;app&gt;</code>,{' '}
+        <code className="px-1 bg-muted rounded">/reset</code>, <code className="px-1 bg-muted rounded">/help</code>. Restart, rollback, build
+        lại chỉ chạy khi bạn bấm <b>Duyệt</b> trong Telegram.
+      </p>
     </div>
   );
 }
