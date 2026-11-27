@@ -218,9 +218,11 @@ function UsageTips() {
         <li>&quot;rollback shop về bản trước&quot;</li>
       </ul>
       <p>
-        Lệnh nhanh: <code className="px-1 bg-muted rounded">/apps</code>, <code className="px-1 bg-muted rounded">/status &lt;app&gt;</code>,{' '}
-        <code className="px-1 bg-muted rounded">/reset</code>, <code className="px-1 bg-muted rounded">/help</code>. Restart, rollback, build
-        lại chỉ chạy khi bạn bấm <b>Duyệt</b> trong Telegram.
+        Lệnh nhanh: <code className="px-1 bg-muted rounded">/status</code>, <code className="px-1 bg-muted rounded">/logs</code>,{' '}
+        <code className="px-1 bg-muted rounded">/check</code>, <code className="px-1 bg-muted rounded">/debug</code>,{' '}
+        <code className="px-1 bg-muted rounded">/restart</code>, <code className="px-1 bg-muted rounded">/rollback</code>… Gõ{' '}
+        <code className="px-1 bg-muted rounded">/help</code> trong Telegram để xem đầy đủ. Restart, rollback, build lại chỉ chạy khi bạn bấm{' '}
+        <b>Duyệt</b>.
       </p>
     </div>
   );
