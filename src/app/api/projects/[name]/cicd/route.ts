@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Octokit } from '@octokit/rest';
 import { backendFetch, getBackendBaseUrl, requireAppAccess } from '@/lib/backend';
+import { logActivity } from '@/lib/activity';
 
 function webhookConfig(url: string) {
   return {
@@ -195,6 +196,7 @@ export async function POST(
         where: { id: project.id },
         data: { auto_cicd },
       }).catch((e) => console.error('Failed to update project auto_cicd:', e));
+      await logActivity({ userId: project.userId, actorId: access.id, action: 'cicd', target: appName, detail: auto_cicd ? 'Bật Auto CI/CD' : 'Tắt Auto CI/CD' });
     }
 
     let webhookSynced = false;

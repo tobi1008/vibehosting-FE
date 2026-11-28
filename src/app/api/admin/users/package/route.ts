@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { backendFetch, requireUser } from '@/lib/backend';
 import { reapplyForUsers } from '@/lib/packages';
+import { logActivity } from '@/lib/activity';
 
 /** Admin gán gói cho user (packageId null = dùng gói mặc định), rồi áp lại giới hạn cho các app của user */
 export async function PUT(req: Request) {
@@ -20,6 +21,10 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'Không tìm thấy gói' }, { status: 404 });
   }
   await prisma.user.update({ where: { id: userId }, data: { packageId } });
+  const pkgName = packageId
+    ? (await prisma.package.findUnique({ where: { id: packageId }, select: { name: true } }))?.name
+    : 'gói mặc định';
+  await logActivity({ userId, actorId: admin.id, action: 'package', target: pkgName || null, detail: 'Admin đổi gói hosting' });
   const reapplied = await reapplyForUsers(backendFetch, [userId]);
   return NextResponse.json({ success: true, reapplied });
 }

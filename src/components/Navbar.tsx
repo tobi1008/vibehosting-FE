@@ -48,11 +48,11 @@ export function Navbar() {
           { href: '/admin/packages', label: 'Packages' },
         ]
       : []),
-    { href: '#', label: 'Integrations' },
-    { href: '#', label: 'Activity' },
-    { href: '#', label: 'Domains' },
-    { href: '#', label: 'Usage' },
-    { href: '#', label: 'Settings' },
+    { href: '/integrations', label: 'Integrations' },
+    { href: '/activity', label: 'Activity' },
+    { href: '/domains', label: 'Domains' },
+    { href: '/usage', label: 'Usage' },
+    { href: '/settings', label: 'Settings' },
   ];
 
   if (!session) return null;

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { parseGitHubRepoUrl, stagedProjectFiles } from '@/lib/projectFiles';
 import { Octokit } from '@octokit/rest';
 import { backendFetch, requireAppAccess } from '@/lib/backend';
+import { logActivity, appOwnerId } from '@/lib/activity';
 
 async function getExistingProjectFile(appName: string, filePath: string): Promise<string | null> {
   try {
@@ -197,6 +198,13 @@ export async function POST(
       );
     }
 
+    await logActivity({
+      userId: (await appOwnerId(appName)) || access.id,
+      actorId: access.id,
+      action: 'ai_fix',
+      target: appName,
+      detail: `Thực thi ${normalizedActions.length} hành động AI Debug đề xuất`,
+    });
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Failed to execute AI Debug actions:', error);

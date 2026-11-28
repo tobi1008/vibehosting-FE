@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { backendFetch, requireUser } from '@/lib/backend';
+import { logActivity } from '@/lib/activity';
 
 /**
  * Key AI riêng của user đang đăng nhập. Proxy tới Vibe Core, luôn gắn user_id của phiên (không lấy từ body),
@@ -39,13 +40,20 @@ export async function PUT(req: Request) {
     is_default: Boolean(body?.is_default),
   };
   try {
-    return relay(
-      await backendFetch('/api/ai-credentials', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-    );
+    const res = await backendFetch('/api/ai-credentials', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      await logActivity({
+        userId: user.id,
+        action: 'ai_key_added',
+        target: payload.provider,
+        detail: `${payload.id ? 'Cập nhật' : 'Thêm'} key AI, model ${payload.model}`,
+      });
+    }
+    return relay(res);
   } catch {
     return NextResponse.json({ error: 'Không kết nối được Vibe Core' }, { status: 502 });
   }
@@ -57,9 +65,9 @@ export async function DELETE(req: Request) {
   const id = new URL(req.url).searchParams.get('id') || '';
   if (!/^[a-f0-9]{8,32}$/.test(id)) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
   try {
-    return relay(
-      await backendFetch(`/api/ai-credentials/${id}?user_id=${encodeURIComponent(user.id)}`, { method: 'DELETE' }),
-    );
+    const res = await backendFetch(`/api/ai-credentials/${id}?user_id=${encodeURIComponent(user.id)}`, { method: 'DELETE' });
+    if (res.ok) await logActivity({ userId: user.id, action: 'ai_key_removed', detail: 'Xóa key AI' });
+    return relay(res);
   } catch {
     return NextResponse.json({ error: 'Không kết nối được Vibe Core' }, { status: 502 });
   }

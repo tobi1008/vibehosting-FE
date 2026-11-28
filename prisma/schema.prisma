@@ -22,6 +22,7 @@ model User {
   projects       Project[]
   packageId      String?
   package        Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  activities     ActivityLog[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -60,4 +61,19 @@ model Package {
   users         User[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// Nhật ký hoạt động hiện ở trang Activity: triển khai, xóa, redeploy, rollback, đổi gói, key AI...
+// actorId khác userId khi admin thao tác trên tài khoản/app của user.
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String?
+  action    String
+  target    String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

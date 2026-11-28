@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { backendFetch, requireAppAccess } from '@/lib/backend';
+import { logActivity, appOwnerId } from '@/lib/activity';
 
 export async function POST(
   req: Request,
@@ -52,6 +53,13 @@ export async function POST(
       );
     }
 
+    await logActivity({
+      userId: (await appOwnerId(appName)) || access.id,
+      actorId: access.id,
+      action: 'rollback',
+      target: appName,
+      detail: `Quay về ${Number(revision) ? `revision ${revision}` : 'bản trước'}${component ? ` (${component})` : ''}`,
+    });
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Error executing deploy rollback:', error);

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { backendFetch } from '@/lib/backend';
 import { requireProjectQuota } from '@/lib/packages';
+import { logActivity } from '@/lib/activity';
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   try {
@@ -119,6 +120,7 @@ export async function POST(req: Request) {
 
     let record;
     if (existing) {
+      await logActivity({ userId, action: "deploy", target: app_name, detail: "Triển khai lại" });
       record = await prisma.project.update({
         where: { id: existing.id },
         data: {
@@ -150,6 +152,8 @@ export async function POST(req: Request) {
           userId,
         },
       });
+
+      await logActivity({ userId, action: "deploy", target: app_name, detail: "Tạo project mới" });
 
       // Default auto_cicd to false on backend config for newly created projects
       try {
@@ -214,6 +218,7 @@ export async function DELETE(req: Request) {
     await prisma.project.delete({
       where: { id },
     });
+    await logActivity({ userId, action: "delete", target: existing.app_name, detail: "Xóa project" });
 
     return NextResponse.json({ success: true });
   } catch (error) {

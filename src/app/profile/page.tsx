@@ -4,10 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TelegramLinkCard from '@/components/TelegramLinkCard';
-import TelegramBotSettings from '@/components/TelegramBotSettings';
 import PackageCard from '@/components/PackageCard';
-import AiCredentialsCard from '@/components/AiCredentialsCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound,
@@ -27,6 +24,7 @@ import {
   Eye,
   EyeOff,
   Save,
+  ArrowRight,
 } from 'lucide-react';
 
 function GithubIcon({ className = "w-5 h-5" }: { className?: string }) {
@@ -68,7 +66,6 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [telegramRefresh, setTelegramRefresh] = useState(0);
 
   // Edit name state
   const [displayName, setDisplayName] = useState('');
@@ -374,11 +371,20 @@ export default function ProfilePage() {
         {/* Right Column: GitHub Integration & Repositories */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <PackageCard />
-          <AiCredentialsCard />
 
-          {/* Hermes trên Telegram: admin cấu hình bot, mọi người dùng liên kết tài khoản */}
-          {profile?.role === 'admin' && <TelegramBotSettings onChange={() => setTelegramRefresh((n) => n + 1)} />}
-          <TelegramLinkCard isAdmin={profile?.role === 'admin'} refreshKey={telegramRefresh} />
+          {/* Telegram (Hermes) và key AI riêng nằm ở trang Integrations */}
+          <Link
+            href="/integrations"
+            className="bg-card border border-border rounded-xl p-5 shadow-sm flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors"
+          >
+            <div>
+              <p className="font-semibold text-foreground">Telegram & key AI riêng</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Liên kết Hermes trên Telegram và gắn API key OpenAI, Anthropic, Gemini… ở trang Integrations.
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 shrink-0" />
+          </Link>
 
           {/* GitHub Connection Card */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
