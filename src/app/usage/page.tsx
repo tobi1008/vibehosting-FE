@@ -22,6 +22,8 @@ type Totals = {
   memory_mi: number;
   cpu_limit_m: number;
   memory_limit_mi: number;
+  cpu_unlimited?: boolean;
+  memory_unlimited?: boolean;
   ephemeral_mi: number;
   db_used_mi: number;
   db_capacity_mi: number;
@@ -167,7 +169,7 @@ export default function UsagePage() {
               icon={<FolderGit2 className="w-4 h-4" />}
               title="Project"
               value={`${pkg.usedProjects}${pkg.unlimited ? '' : ` / ${pkg.maxProjects}`}`}
-              hint={`Gói ${pkg.name}`}
+              hint={pkg.unlimited ? 'Tài khoản admin: không giới hạn số project' : `Gói ${pkg.name}`}
               used={pkg.usedProjects}
               total={pkg.unlimited ? 0 : pkg.maxProjects || 0}
             />
@@ -175,17 +177,17 @@ export default function UsagePage() {
               icon={<Cpu className="w-4 h-4" />}
               title="CPU đang dùng"
               value={formatCpu(t.cpu_m)}
-              hint={`Giới hạn đã cấp: ${formatCpu(t.cpu_limit_m)}${pkg.cpu ? ` · gói ${pkg.cpu}/container` : ''}`}
+              hint={limitHint(t.cpu_unlimited, pkg.unlimited, formatCpu(t.cpu_limit_m), pkg.cpu)}
               used={t.cpu_m}
-              total={t.cpu_limit_m}
+              total={t.cpu_unlimited ? 0 : t.cpu_limit_m}
             />
             <StatCard
               icon={<MemoryStick className="w-4 h-4" />}
               title="RAM đang dùng"
               value={formatMi(t.memory_mi)}
-              hint={`Giới hạn đã cấp: ${formatMi(t.memory_limit_mi)}${pkg.memory ? ` · gói ${pkg.memory}/container` : ''}`}
+              hint={limitHint(t.memory_unlimited, pkg.unlimited, formatMi(t.memory_limit_mi), pkg.memory)}
               used={t.memory_mi}
-              total={t.memory_limit_mi}
+              total={t.memory_unlimited ? 0 : t.memory_limit_mi}
             />
             <StatCard
               icon={<Database className="w-4 h-4" />}
@@ -272,6 +274,13 @@ export default function UsagePage() {
       ) : null}
     </div>
   );
+}
+
+/** Dòng chú thích dưới thẻ CPU/RAM: không so với tổng giới hạn khi có app không bị giới hạn */
+function limitHint(anyUnlimited: boolean | undefined, adminAccount: boolean, limit: string, perContainer: string | null) {
+  if (adminAccount) return 'Tài khoản admin: không giới hạn';
+  if (anyUnlimited) return 'Có app chưa được áp giới hạn (sẽ áp ở lần triển khai tới)';
+  return `Giới hạn đã cấp: ${limit}${perContainer ? ` · gói ${perContainer}/container` : ''}`;
 }
 
 function StatCard({
@@ -364,15 +373,15 @@ function AppTable({
                       <>
                         <td className="py-3 px-4">
                           <p className="font-mono text-xs mb-1">
-                            {formatCpu(u.cpu_m)} / {u.cpu_limit_m ? formatCpu(u.cpu_limit_m) : 'không giới hạn'}
+                            {formatCpu(u.cpu_m)} / {u.cpu_limit_m && !u.cpu_unlimited ? formatCpu(u.cpu_limit_m) : 'không giới hạn'}
                           </p>
-                          <UsageBar used={u.cpu_m} total={u.cpu_limit_m} label="CPU" />
+                          <UsageBar used={u.cpu_m} total={u.cpu_unlimited ? 0 : u.cpu_limit_m} label="CPU" />
                         </td>
                         <td className="py-3 px-4">
                           <p className="font-mono text-xs mb-1">
-                            {formatMi(u.memory_mi)} / {u.memory_limit_mi ? formatMi(u.memory_limit_mi) : 'không giới hạn'}
+                            {formatMi(u.memory_mi)} / {u.memory_limit_mi && !u.memory_unlimited ? formatMi(u.memory_limit_mi) : 'không giới hạn'}
                           </p>
-                          <UsageBar used={u.memory_mi} total={u.memory_limit_mi} label="RAM" />
+                          <UsageBar used={u.memory_mi} total={u.memory_unlimited ? 0 : u.memory_limit_mi} label="RAM" />
                         </td>
                         <td className="py-3 px-4">
                           {u.db_capacity_mi ? (

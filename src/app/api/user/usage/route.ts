@@ -14,6 +14,8 @@ type AppUsage = {
   cpu_limit_m: number;
   memory_limit_mi: number;
   ephemeral_mi: number;
+  cpu_unlimited?: boolean;
+  memory_unlimited?: boolean;
   db_used_mi: number | null;
   db_capacity_mi: number;
   pods: { name: string; phase: string; cpu_m: number; memory_mi: number; restarts: number }[];
@@ -21,6 +23,10 @@ type AppUsage = {
 
 const baseName = (n: string) => n.replace(/-(be|fe|monorepo)$/, '');
 
+/**
+ * Cộng số liệu các app. Chỉ cần một app không có giới hạn (vd app của admin) thì tổng giới hạn không còn ý nghĩa:
+ * đánh dấu *_unlimited để giao diện không so "đang dùng" (gồm cả app đó) với "giới hạn" (thiếu app đó).
+ */
 function totals(list: AppUsage[]) {
   return list.reduce(
     (t, a) => ({
@@ -28,11 +34,23 @@ function totals(list: AppUsage[]) {
       memory_mi: t.memory_mi + a.memory_mi,
       cpu_limit_m: t.cpu_limit_m + a.cpu_limit_m,
       memory_limit_mi: t.memory_limit_mi + a.memory_limit_mi,
+      cpu_unlimited: t.cpu_unlimited || Boolean(a.cpu_unlimited ?? (a.pods.length > 0 && !a.cpu_limit_m)),
+      memory_unlimited: t.memory_unlimited || Boolean(a.memory_unlimited ?? (a.pods.length > 0 && !a.memory_limit_mi)),
       ephemeral_mi: t.ephemeral_mi + a.ephemeral_mi,
       db_used_mi: t.db_used_mi + (a.db_used_mi || 0),
       db_capacity_mi: t.db_capacity_mi + a.db_capacity_mi,
     }),
-    { cpu_m: 0, memory_mi: 0, cpu_limit_m: 0, memory_limit_mi: 0, ephemeral_mi: 0, db_used_mi: 0, db_capacity_mi: 0 },
+    {
+      cpu_m: 0,
+      memory_mi: 0,
+      cpu_limit_m: 0,
+      memory_limit_mi: 0,
+      cpu_unlimited: false,
+      memory_unlimited: false,
+      ephemeral_mi: 0,
+      db_used_mi: 0,
+      db_capacity_mi: 0,
+    },
   );
 }
 
