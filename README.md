@@ -15,7 +15,6 @@ Phần xử lý triển khai (build, K3s, AI, Hermes) nằm ở repo backend **[
 - [API routes](#api-routes)
 - [Cài đặt và chạy local](#cài-đặt-và-chạy-local)
 - [Triển khai lên Vercel](#triển-khai-lên-vercel)
-- [Giới hạn hiện tại và hướng phát triển](#giới-hạn-hiện-tại-và-hướng-phát-triển)
 
 ---
 
@@ -279,16 +278,3 @@ Sau khi thêm bảng `AppAllocation` lần đầu, chạy `node scripts/backfill
    1. triển khai Vibe Core trước;
    2. chạy `prisma db push` nếu schema đổi;
    3. rồi mới push frontend.
-
----
-
-## Giới hạn hiện tại và hướng phát triển
-
-| Giới hạn | Hướng cải thiện |
-|---|---|
-| GitHub token của người dùng lưu trong database dạng văn bản thường. | Mã hóa trước khi lưu (ví dụ AES-GCM với khóa từ biến môi trường). |
-| Tên app là định danh duy nhất toàn hệ thống, dùng chung cho dashboard và K3s. | Tách định danh nội bộ khỏi tên hiển thị, namespace theo người dùng. |
-| Trạng thái triển khai suy ra từ log. | Nhận trạng thái có cấu trúc từ backend. |
-| Gói chưa có hạn mức số lượt dùng AI. | Thêm hạn mức AI theo gói. |
-| Chưa có migration, thay đổi schema dùng `prisma db push`. | Chuyển sang `prisma migrate` khi schema ổn định. |
-| Chưa có bộ kiểm thử tự động cho frontend (backend có bộ pytest riêng). | Bổ sung unit test cho phân quyền, gói hosting và integration test cho các luồng triển khai. |
