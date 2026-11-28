@@ -580,7 +580,11 @@ export default function NewProject() {
       `> AI Engine: ${
         selectedAiProvider === 'claude'
           ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
-          : 'Google Antigravity (Gemini Flash)'
+          : selectedAiProvider === 'hydrogen'
+            ? 'Gemini 4 Hydrogen (Antigravity)'
+            : selectedAiProvider.startsWith('byo:')
+              ? 'Key AI riêng của bạn'
+              : 'Google Antigravity (Gemini Flash)'
       }`,
       "> Verifier: Hermes Agent sẽ kiểm tra tổng thể Pod / K3s sau khi triển khai",
       `> Architecture: ${
@@ -855,7 +859,11 @@ export default function NewProject() {
       `> AI Engine: ${
         selectedAiProvider === 'claude'
           ? 'Claude Code (Anthropic Opus 5.5 / Sonnet 5.5)'
-          : 'Google Antigravity (Gemini Flash)'
+          : selectedAiProvider === 'hydrogen'
+            ? 'Gemini 4 Hydrogen (Antigravity)'
+            : selectedAiProvider.startsWith('byo:')
+              ? 'Key AI riêng của bạn'
+              : 'Google Antigravity (Gemini Flash)'
       }`,
       "> Verifier: Hermes Agent sẽ kiểm tra tổng thể Pod / K3s sau khi triển khai",
       `> Architecture: ${

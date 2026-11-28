@@ -38,6 +38,18 @@ export function getProviderVisual(id: string) {
       shortName: 'Claude Code',
     };
   }
+  if (id === 'hydrogen') {
+    return {
+      icon: <Zap className="w-4 h-4" />,
+      dotColor: 'bg-cyan-500 dark:bg-cyan-400',
+      iconContainer: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25',
+      badgeClass: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25',
+      selectedCard: 'border-cyan-500/60 bg-cyan-500/5 shadow-xs ring-1 ring-cyan-500/30',
+      activeCheck: 'text-cyan-600 dark:text-cyan-400',
+      shortTag: 'Gemini 4',
+      shortName: 'Gemini 4 Hydrogen',
+    };
+  }
   if (id.startsWith('byo:')) {
     return {
       icon: <Zap className="w-4 h-4" />,

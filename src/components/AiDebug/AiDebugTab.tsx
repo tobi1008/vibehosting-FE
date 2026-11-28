@@ -401,7 +401,7 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
     if (agentMode) {
       try {
         if (selectedAiProvider.startsWith('byo:')) {
-          throw new Error('Chế độ Agent cần Google Antigravity hoặc Claude Code (key riêng chỉ trả lời, không sửa được file).');
+          throw new Error('Chế độ Agent cần Google Antigravity, Gemini 4 Hydrogen hoặc Claude Code (key riêng chỉ trả lời, không sửa được file).');
         }
         const res = await fetch('/api/ai-debug/agent', {
           method: 'POST',

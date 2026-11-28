@@ -14,6 +14,13 @@ export const DEFAULT_AI_PROVIDERS = [
     ],
   },
   {
+    id: 'hydrogen',
+    name: 'Gemini 4 Hydrogen (Antigravity)',
+    badge: 'Model mới - Mạnh',
+    description: 'Dùng Gemini 4 Hydrogen qua Antigravity CLI trên VPS (Medium, dự phòng High/Low, rồi Gemini 3.8 Flash)',
+    models: ['gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-low'],
+  },
+  {
     id: 'claude',
     name: 'Claude Code (Anthropic Opus/Sonnet)',
     badge: 'Trí tuệ cao cấp (Opus 5.5)',
