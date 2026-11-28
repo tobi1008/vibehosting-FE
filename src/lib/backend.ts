@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getEffectivePackage, pushResources, requireProjectQuota } from '@/lib/packages';
 
 /**
  * Kết nối tới Vibe Core API (backend) — CHỈ dùng trong API route phía server.
@@ -74,5 +75,12 @@ export async function requireAppNameAvailable(appName: string): Promise<AuthUser
   if (takenByOther) {
     return NextResponse.json({ error: 'Tên ứng dụng đã được người khác sử dụng' }, { status: 409 });
   }
+
+  // Gói hosting: chặn khi hết số project, rồi gửi giới hạn CPU/RAM/database cho Vibe Core trước khi triển khai
+  const pkg = await getEffectivePackage(user);
+  const quota = await requireProjectQuota(user, appName, pkg);
+  if (quota) return quota;
+  const pushed = await pushResources(backendFetch, appName, pkg);
+  if (pushed) return pushed;
   return user;
 }

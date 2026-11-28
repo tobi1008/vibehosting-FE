@@ -32,6 +32,7 @@ interface ManagedUser {
   role: string;
   githubUsername: string | null;
   githubAvatar: string | null;
+  packageId: string | null;
   createdAt: string;
   _count: {
     projects: number;
@@ -43,6 +44,8 @@ export default function AdminUsersPage() {
   const router = useRouter();
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [packages, setPackages] = useState<{ id: string; name: string; isDefault: boolean }[]>([]);
+  const [packageSavingId, setPackageSavingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -80,10 +83,13 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/users');
+      const [res, pkgRes] = await Promise.all([fetch('/api/admin/users'), fetch('/api/admin/packages')]);
       if (res.ok) {
         const data = await res.json();
         setUsers(data);
+      }
+      if (pkgRes.ok) {
+        setPackages(await pkgRes.json());
       }
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -97,6 +103,32 @@ export default function AdminUsersPage() {
       fetchUsers();
     }
   }, [status, isCurrentAdmin, fetchUsers]);
+
+  const handleChangePackage = async (user: ManagedUser, packageId: string) => {
+    setActionError('');
+    setActionSuccess('');
+    setPackageSavingId(user.id);
+    try {
+      const res = await fetch('/api/admin/users/package', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, packageId: packageId || null }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'Không đổi được gói');
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, packageId: packageId || null } : u)));
+      const failed: string[] = data?.reapplied?.failed || [];
+      setActionSuccess(
+        `Đã đổi gói của @${user.username}. Áp lại giới hạn cho ${data?.reapplied?.updated || 0} app` +
+          (failed.length ? `, lỗi: ${failed.join(', ')}` : '') +
+          '.',
+      );
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setPackageSavingId(null);
+    }
+  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,6 +404,7 @@ export default function AdminUsersPage() {
               <tr>
                 <th className="py-3.5 px-6 font-semibold">User</th>
                 <th className="py-3.5 px-6 font-semibold">Role</th>
+                <th className="py-3.5 px-6 font-semibold">Gói</th>
                 <th className="py-3.5 px-6 font-semibold text-center">Projects</th>
                 <th className="py-3.5 px-6 font-semibold">Created</th>
                 <th className="py-3.5 px-6 font-semibold text-right">Actions</th>
@@ -380,7 +413,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-border">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
                     No users found matching your search.
                   </td>
                 </tr>
@@ -424,6 +457,34 @@ export default function AdminUsersPage() {
                         >
                           {user.role.toUpperCase()}
                         </span>
+                      </td>
+
+                      <td className="py-4 px-6">
+                        {user.role === 'admin' ? (
+                          <span className="text-xs text-muted-foreground">Không giới hạn</span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={user.packageId || ''}
+                              disabled={packageSavingId === user.id}
+                              onChange={(e) => handleChangePackage(user, e.target.value)}
+                              aria-label={`Gói của @${user.username}`}
+                              className="bg-background border border-border rounded-md px-2 py-1 text-xs outline-none focus:border-foreground max-w-[160px]"
+                            >
+                              <option value="">
+                                Mặc định ({packages.find((p) => p.isDefault)?.name || 'Cơ bản'})
+                              </option>
+                              {packages.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                            {packageSavingId === user.id && (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 text-center">

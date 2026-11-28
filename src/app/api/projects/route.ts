@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { backendFetch } from '@/lib/backend';
+import { requireProjectQuota } from '@/lib/packages';
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   try {
@@ -105,6 +106,11 @@ export async function POST(req: Request) {
     if (takenByOther) {
       return NextResponse.json({ error: "Tên ứng dụng đã được người khác sử dụng" }, { status: 409 });
     }
+
+    // Gói hosting: không tạo thêm project khi đã đạt giới hạn của gói
+    const role = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const quota = await requireProjectQuota({ id: userId, role: role?.role || 'user' }, app_name);
+    if (quota) return quota;
 
     // Check if project already exists for this user, if so update it
     const existing = await prisma.project.findFirst({

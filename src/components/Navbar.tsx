@@ -42,7 +42,12 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'Overview' },
     { href: '/profile', label: 'Profile' },
-    ...(isAdmin && !isImpersonating ? [{ href: '/admin/users', label: 'Users' }] : []),
+    ...(isAdmin && !isImpersonating
+      ? [
+          { href: '/admin/users', label: 'Users' },
+          { href: '/admin/packages', label: 'Packages' },
+        ]
+      : []),
     { href: '#', label: 'Integrations' },
     { href: '#', label: 'Activity' },
     { href: '#', label: 'Domains' },

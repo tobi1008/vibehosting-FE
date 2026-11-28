@@ -20,6 +20,8 @@ model User {
   githubUsername        String?
   githubAvatar   String?
   projects       Project[]
+  packageId      String?
+  package        Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -41,4 +43,21 @@ model Project {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Gói hosting: admin tạo và gán cho user. User chưa được gán dùng gói isDefault (hoặc gói dựng sẵn
+// trong src/lib/packages.ts nếu chưa có gói mặc định). Admin không bị giới hạn.
+model Package {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  maxProjects   Int      @default(3)
+  cpuMillicores Int      @default(500)
+  memoryMi      Int      @default(512)
+  allowDatabase Boolean  @default(true)
+  dbStorageGi   Int      @default(1)
+  isDefault     Boolean  @default(false)
+  users         User[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

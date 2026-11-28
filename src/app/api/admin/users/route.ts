@@ -22,6 +22,7 @@ export async function GET() {
         role: true,
         githubUsername: true,
         githubAvatar: true,
+        packageId: true,
         createdAt: true,
         _count: {
           select: { projects: true },
