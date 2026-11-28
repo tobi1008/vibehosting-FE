@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { backendFetch, requireAppNameAvailable } from '@/lib/backend';
+import { allocationRequestFrom } from '@/lib/packages';
 
 async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
   if (!repoUrl) return false;
@@ -21,7 +22,10 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const guard = await requireAppNameAvailable(String(formData.get('app_name') || '').trim());
+    const guard = await requireAppNameAvailable(
+      String(formData.get('app_name') || '').trim(),
+      allocationRequestFrom(formData, 'web_db'),
+    );
     if (guard instanceof NextResponse) return guard;
 
     // Bảo mật: Nếu repo là Public, xóa token khỏi FormData

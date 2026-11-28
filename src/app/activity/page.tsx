@@ -14,6 +14,7 @@ import {
   Package,
   Rocket,
   RotateCcw,
+  SlidersHorizontal,
   Trash2,
   Wrench,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ const ACTIONS: Record<string, { label: string; icon: React.ReactNode; color: str
   ai_key_added: { label: 'Key AI', icon: <KeyRound className="w-4 h-4" />, color: 'text-violet-500 bg-violet-500/10' },
   ai_key_removed: { label: 'Key AI', icon: <KeyRound className="w-4 h-4" />, color: 'text-muted-foreground bg-muted' },
   password: { label: 'Bảo mật', icon: <Lock className="w-4 h-4" />, color: 'text-muted-foreground bg-muted' },
+  resources: { label: 'Tài nguyên', icon: <SlidersHorizontal className="w-4 h-4" />, color: 'text-sky-500 bg-sky-500/10' },
 };
 
 function dayLabel(date: string) {

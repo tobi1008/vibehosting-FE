@@ -60,8 +60,11 @@ type NodeInfo = {
 
 type UserRow = { id: string; username: string; role: string; package: { name: string }; projects: number; totals: Totals };
 
+type Alloc = { cpuMillicores: number; memoryMi: number; dbStorageGi: number };
+
 type UsageData = {
   package: PackageInfo;
+  allocation: { total: Alloc; allocated: Alloc } | null;
   totals: Totals;
   apps: AppRow[];
   measured_at: number | null;
@@ -177,7 +180,14 @@ export default function UsagePage() {
               icon={<Cpu className="w-4 h-4" />}
               title="CPU đang dùng"
               value={formatCpu(t.cpu_m)}
-              hint={limitHint(t.cpu_unlimited, pkg.unlimited, formatCpu(t.cpu_limit_m), pkg.cpu)}
+              hint={limitHint(
+                t.cpu_unlimited,
+                pkg.unlimited,
+                formatCpu(t.cpu_limit_m),
+                data.allocation
+                  ? `${formatCpu(data.allocation.allocated.cpuMillicores)}/${formatCpu(data.allocation.total.cpuMillicores)} của gói`
+                  : null,
+              )}
               used={t.cpu_m}
               total={t.cpu_unlimited ? 0 : t.cpu_limit_m}
             />
@@ -185,7 +195,14 @@ export default function UsagePage() {
               icon={<MemoryStick className="w-4 h-4" />}
               title="RAM đang dùng"
               value={formatMi(t.memory_mi)}
-              hint={limitHint(t.memory_unlimited, pkg.unlimited, formatMi(t.memory_limit_mi), pkg.memory)}
+              hint={limitHint(
+                t.memory_unlimited,
+                pkg.unlimited,
+                formatMi(t.memory_limit_mi),
+                data.allocation
+                  ? `${formatMi(data.allocation.allocated.memoryMi)}/${formatMi(data.allocation.total.memoryMi)} của gói`
+                  : null,
+              )}
               used={t.memory_mi}
               total={t.memory_unlimited ? 0 : t.memory_limit_mi}
             />
@@ -195,7 +212,9 @@ export default function UsagePage() {
               value={formatMi(t.db_used_mi)}
               hint={
                 pkg.allowDatabase
-                  ? `Đã cấp ${formatMi(t.db_capacity_mi)}${pkg.dbStorage ? ` · gói ${pkg.dbStorage}/database` : ''}`
+                  ? `Ổ đã cấp ${formatMi(t.db_capacity_mi)}${
+                      data.allocation ? ` · đã phân bổ ${data.allocation.allocated.dbStorageGi}/${data.allocation.total.dbStorageGi} GiB của gói` : ''
+                    }`
                   : 'Gói không bao gồm database'
               }
               used={t.db_used_mi}
@@ -276,11 +295,11 @@ export default function UsagePage() {
   );
 }
 
-/** Dòng chú thích dưới thẻ CPU/RAM: không so với tổng giới hạn khi có app không bị giới hạn */
-function limitHint(anyUnlimited: boolean | undefined, adminAccount: boolean, limit: string, perContainer: string | null) {
+/** Dòng chú thích dưới thẻ CPU/RAM: phần đã phân bổ trong gói; không so với giới hạn khi có app không bị giới hạn */
+function limitHint(anyUnlimited: boolean | undefined, adminAccount: boolean, limit: string, allocation: string | null) {
   if (adminAccount) return 'Tài khoản admin: không giới hạn';
-  if (anyUnlimited) return 'Có app chưa được áp giới hạn (sẽ áp ở lần triển khai tới)';
-  return `Giới hạn đã cấp: ${limit}${perContainer ? ` · gói ${perContainer}/container` : ''}`;
+  if (anyUnlimited) return 'Có app chưa được áp giới hạn (chọn mức ở tab Cài đặt của app)';
+  return `Giới hạn đang chạy: ${limit}${allocation ? ` · đã phân bổ ${allocation}` : ''}`;
 }
 
 function StatCard({

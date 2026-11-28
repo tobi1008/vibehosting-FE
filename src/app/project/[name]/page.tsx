@@ -10,6 +10,7 @@ import { extractCurrentSessionLines } from '@/lib/deployment';
 import { CodeEditorTab } from '@/components/FileManager/CodeEditorTab';
 import { AiDebugTab } from '@/components/AiDebug/AiDebugTab';
 import { DeployHistoryTab } from '@/components/DeployHistory/DeployHistoryTab';
+import ProjectResourcesCard from '@/components/ProjectSettings/ProjectResourcesCard';
 import { HealthReportTab } from '@/components/HealthReport/HealthReportTab';
 import {
   ArrowLeft,
@@ -1188,6 +1189,8 @@ export default function ProjectDetailPage({
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col gap-6"
           >
+            <ProjectResourcesCard appName={appName} />
+
             <div className="mb-2">
               <h2 className="text-lg font-semibold text-foreground">CI/CD Management</h2>
               <p className="text-xs text-muted-foreground">

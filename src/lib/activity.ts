@@ -11,7 +11,8 @@ export type ActivityAction =
   | 'package'
   | 'ai_key_added'
   | 'ai_key_removed'
-  | 'password';
+  | 'password'
+  | 'resources';
 
 /**
  * Ghi một dòng nhật ký hoạt động. Không bao giờ làm hỏng thao tác chính: lỗi ghi log chỉ in ra console.

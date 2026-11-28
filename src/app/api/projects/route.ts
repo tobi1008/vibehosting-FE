@@ -218,6 +218,8 @@ export async function DELETE(req: Request) {
     await prisma.project.delete({
       where: { id },
     });
+    // Trả phần tài nguyên đã phân bổ cho app về gói
+    await prisma.appAllocation.deleteMany({ where: { appName: existing.app_name } });
     await logActivity({ userId, action: "delete", target: existing.app_name, detail: "Xóa project" });
 
     return NextResponse.json({ success: true });

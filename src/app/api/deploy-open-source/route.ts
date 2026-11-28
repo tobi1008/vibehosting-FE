@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { backendFetch, requireAppNameAvailable } from '@/lib/backend';
+import { allocationRequestFrom } from '@/lib/packages';
 
 async function isRepoPublic(repoUrl?: string | null): Promise<boolean> {
   if (!repoUrl) return false;
@@ -21,7 +22,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const guard = await requireAppNameAvailable(String(body?.app_name || '').trim());
+    const guard = await requireAppNameAvailable(
+      String(body?.app_name || '').trim(),
+      allocationRequestFrom(body || {}, 'clean_db', { dbType: body?.db_type || 'mysql' }),
+    );
     if (guard instanceof NextResponse) return guard;
 
     // Chuẩn hóa payload theo đặc tả

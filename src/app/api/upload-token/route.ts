@@ -1,6 +1,7 @@
 import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 import { getBackendBaseUrl, requireAppNameAvailable } from '@/lib/backend';
+import { allocationRequestFrom } from '@/lib/packages';
 
 // Trùng định dạng với create_upload_token trong vibe-core/security.py: <app_name>.<expires_at>.<hmac_hex>
 const APP_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$/;
@@ -14,7 +15,10 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const appName = String(body?.app_name || '').trim();
 
-  const guard = await requireAppNameAvailable(appName);
+  const guard = await requireAppNameAvailable(
+    appName,
+    allocationRequestFrom(body || {}, 'archive', { dbType: body?.with_db ? body?.db_type || 'mysql' : null }),
+  );
   if (guard instanceof NextResponse) return guard;
   if (!APP_NAME_PATTERN.test(appName)) {
     return NextResponse.json({ error: 'Tên ứng dụng không hợp lệ' }, { status: 400 });

@@ -41,6 +41,8 @@ import { useSession } from "next-auth/react";
 import { Octokit } from "@octokit/rest";
 import { ArchiveDeployTab } from "@/components/DeployArchive/ArchiveDeployTab";
 import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
+import ResourcePicker from "@/components/ResourcePicker";
+import { partsFor, type Allocation } from "@/lib/resources";
 import { useAiProvider } from "@/lib/useAiProvider";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -156,6 +158,9 @@ export default function NewProject() {
   const [activeRepoTarget, setActiveRepoTarget] = useState<"be" | "fe">("be");
 
   const [selectedDb, setSelectedDb] = useState<DatabaseType>("mysql");
+  // Tài nguyên phân bổ cho app trong gói hosting (mặc định mức "Nhỏ")
+  const [resources, setResources] = useState<Allocation>({ cpuMillicores: 250, memoryMi: 256, dbStorageGi: 1 });
+  const [resourcesValid, setResourcesValid] = useState(true);
   const [dbFile, setDbFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -603,6 +608,16 @@ export default function NewProject() {
       "> Đang gửi yêu cầu khởi tạo đến máy chủ...",
     ]);
 
+    // Mức tài nguyên user chọn cho app (server kiểm tra lại với phần còn lại của gói)
+    const resourceFields = {
+      cpu_millicores: resources.cpuMillicores,
+      memory_mi: resources.memoryMi,
+      db_storage_gi: archType === "web_only" ? 0 : resources.dbStorageGi,
+    };
+    const appendResourceFields = (fd: FormData) => {
+      Object.entries(resourceFields).forEach(([k, v]) => fd.append(k, String(v)));
+    };
+
     const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.quyenlt.com/api/deploy";
     const baseUrl = rawApiUrl.replace(/\/api\/deploy\/?$/, "");
 
@@ -618,6 +633,7 @@ export default function NewProject() {
           db_type: selectedDb,
           ai_provider: selectedAiProvider,
           github_token: isPrivateRepo && githubToken && githubToken.trim() ? githubToken.trim() : null,
+          ...resourceFields,
         };
 
         response = await fetch(`/api/deploy-open-source`, {
@@ -637,12 +653,16 @@ export default function NewProject() {
           db_type: string;
           github_token?: string;
           ai_provider?: string;
+          cpu_millicores?: number;
+          memory_mi?: number;
+          db_storage_gi?: number;
         } = {
           app_name: slugifiedName,
           repo_url: repoUrl.trim(),
           be_domain: finalBeDomain.trim(),
           db_type: selectedDb,
           ai_provider: selectedAiProvider,
+          ...resourceFields,
         };
 
         if (hasFrontend && finalFeDomain && finalFeDomain.trim()) {
@@ -670,6 +690,7 @@ export default function NewProject() {
         formData.append("fe_domain", finalFeDomain.trim());
         formData.append("db_type", selectedDb);
         formData.append("ai_provider", selectedAiProvider);
+        appendResourceFields(formData);
         if (dbFile) formData.append("backup_file", dbFile);
         if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
@@ -685,6 +706,7 @@ export default function NewProject() {
         formData.append("app_domain", finalDomain);
         formData.append("db_type", selectedDb);
         formData.append("ai_provider", selectedAiProvider);
+        appendResourceFields(formData);
         if (dbFile) formData.append("backup_file", dbFile);
         if (isPrivateRepo && githubToken) formData.append("github_token", githubToken);
 
@@ -700,11 +722,15 @@ export default function NewProject() {
           app_domain: string;
           github_token?: string | null;
           ai_provider?: string;
+          cpu_millicores?: number;
+          memory_mi?: number;
+          db_storage_gi?: number;
         } = {
           repo_url: repoUrl,
           app_name: slugifiedName,
           app_domain: finalDomain,
           ai_provider: selectedAiProvider,
+          ...resourceFields,
         };
 
         if (isPrivateRepo && githubToken) {
@@ -2209,6 +2235,17 @@ export default function NewProject() {
                   )}
                 </AnimatePresence>
 
+                {/* Tài nguyên trong gói hosting */}
+                <div className="rounded-xl border border-border p-4">
+                  <ResourcePicker
+                    parts={partsFor(archType, archType === "web_only" ? null : selectedDb, hasFrontend)}
+                    hasDatabase={archType !== "web_only"}
+                    value={resources}
+                    onChange={setResources}
+                    onValidity={setResourcesValid}
+                  />
+                </div>
+
                 {/* AI Engine Selection */}
                 <AiProviderSelector
                   variant="cards"
@@ -2223,6 +2260,7 @@ export default function NewProject() {
                     disabled={
                       isDeploying ||
                       !appName ||
+                      !resourcesValid ||
                       (archType === "fullstack"
                         ? !beRepoUrl.trim() || !feRepoUrl.trim()
                         : !repoUrl) ||

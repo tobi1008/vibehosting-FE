@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AiProviderSelector } from "@/components/AiEngine/AiProviderSelector";
+import ResourcePicker from "@/components/ResourcePicker";
+import { partsFor, type Allocation } from "@/lib/resources";
 import { useAiProvider } from "@/lib/useAiProvider";
 
 export type ArchiveDatabaseType = "mysql" | "postgresql" | "mongodb" | "mariadb";
@@ -127,6 +129,8 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
 
   // Database toggle state
   const [withDatabase, setWithDatabase] = useState(false);
+  const [resources, setResources] = useState<Allocation>({ cpuMillicores: 250, memoryMi: 256, dbStorageGi: 1 });
+  const [resourcesValid, setResourcesValid] = useState(true);
   const [selectedDb, setSelectedDb] = useState<ArchiveDatabaseType>("mysql");
   const [dbBackupFile, setDbBackupFile] = useState<File | null>(null);
   const [dbFileError, setDbFileError] = useState<string | null>(null);
@@ -281,7 +285,15 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
       const tokenRes = await fetch("/api/upload-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_name: slugifiedName }),
+        // Mức tài nguyên và có database hay không: server kiểm tra với gói rồi gửi giới hạn cho Vibe Core
+        body: JSON.stringify({
+          app_name: slugifiedName,
+          with_db: withDatabase,
+          db_type: withDatabase ? selectedDb : null,
+          cpu_millicores: resources.cpuMillicores,
+          memory_mi: resources.memoryMi,
+          db_storage_gi: withDatabase ? resources.dbStorageGi : 0,
+        }),
       });
       const tokenData = await tokenRes.json().catch(() => null);
       if (!tokenRes.ok || !tokenData?.token) {
@@ -841,6 +853,16 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
           )}
 
           {/* AI Engine Selector */}
+          <div className="rounded-xl border border-border p-4">
+            <ResourcePicker
+              parts={partsFor("archive", withDatabase ? selectedDb : null)}
+              hasDatabase={withDatabase}
+              value={resources}
+              onChange={setResources}
+              onValidity={setResourcesValid}
+            />
+          </div>
+
           <AiProviderSelector
             variant="cards"
             value={selectedAiProvider}
@@ -853,6 +875,7 @@ export function ArchiveDeployTab({ onDeploySuccess }: ArchiveDeployTabProps) {
               type="submit"
               disabled={
                 isUploading ||
+                !resourcesValid ||
                 !archiveFile ||
                 !slugifiedName ||
                 (domainType === "custom" && !customDomain.trim())

@@ -23,6 +23,7 @@ model User {
   packageId      String?
   package        Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   activities     ActivityLog[]
+  allocations    AppAllocation[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -48,6 +49,7 @@ model Project {
 
 // Gói hosting: admin tạo và gán cho user. User chưa được gán dùng gói isDefault (hoặc gói dựng sẵn
 // trong src/lib/packages.ts nếu chưa có gói mặc định). Admin không bị giới hạn.
+// cpuMillicores / memoryMi / dbStorageGi là TỔNG tài nguyên của user, chia cho các project (AppAllocation).
 model Package {
   id            String   @id @default(cuid())
   name          String   @unique
@@ -76,4 +78,19 @@ model ActivityLog {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// Tài nguyên user phân bổ cho từng app (chọn khi tạo project, đổi ở tab Cài đặt). Tổng các app của user
+// không vượt gói. parts = số workload của app (web, backend, frontend, database) để chia đều cho từng container.
+model AppAllocation {
+  appName       String   @id
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cpuMillicores Int
+  memoryMi      Int
+  dbStorageGi   Int      @default(0)
+  parts         Int      @default(1)
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
 }

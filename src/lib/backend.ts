@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getEffectivePackage, pushResources, requireProjectQuota } from '@/lib/packages';
+import {
+  type AllocationRequest,
+  getEffectivePackage,
+  pushResources,
+  requireProjectQuota,
+  resolveAllocation,
+  saveAllocation,
+} from '@/lib/packages';
 
 /**
  * Kết nối tới Vibe Core API (backend) — CHỈ dùng trong API route phía server.
@@ -57,31 +64,40 @@ export async function requireAppAccess(appName: string): Promise<AuthUser | Next
 }
 
 /**
- * Dùng cho các route deploy: tên app chưa thuộc về user khác.
- * Cho phép deploy lại app của chính mình.
+ * Dùng cho các route deploy: tên app chưa thuộc về user khác (cho phép deploy lại app của chính mình),
+ * còn số project trong gói, và mức tài nguyên user chọn cho app (alloc) nằm trong phần còn lại của gói.
+ * Mức tài nguyên được lưu (AppAllocation) và gửi cho Vibe Core trước khi triển khai.
  */
-export async function requireAppNameAvailable(appName: string): Promise<AuthUser | NextResponse> {
+export async function requireAppNameAvailable(
+  appName: string,
+  alloc: AllocationRequest = {},
+): Promise<AuthUser | NextResponse> {
   const user = await requireUser();
   if (user instanceof NextResponse) return user;
   if (!appName) {
     return NextResponse.json({ error: 'Thiếu tên ứng dụng' }, { status: 400 });
   }
-  if (user.role === 'admin') return registerAppOwner(appName, user);
 
-  const takenByOther = await prisma.project.findFirst({
-    where: { app_name: appName, NOT: { userId: user.id } },
-    select: { id: true },
-  });
-  if (takenByOther) {
-    return NextResponse.json({ error: 'Tên ứng dụng đã được người khác sử dụng' }, { status: 409 });
+  if (user.role !== 'admin') {
+    const takenByOther = await prisma.project.findFirst({
+      where: { app_name: appName, NOT: { userId: user.id } },
+      select: { id: true },
+    });
+    if (takenByOther) {
+      return NextResponse.json({ error: 'Tên ứng dụng đã được người khác sử dụng' }, { status: 409 });
+    }
   }
 
-  // Gói hosting: chặn khi hết số project, rồi gửi giới hạn CPU/RAM/database cho Vibe Core trước khi triển khai
   const pkg = await getEffectivePackage(user);
   const quota = await requireProjectQuota(user, appName, pkg);
   if (quota) return quota;
-  const pushed = await pushResources(backendFetch, appName, pkg);
-  if (pushed) return pushed;
+  const resolved = await resolveAllocation(user, pkg, appName, alloc);
+  if (resolved instanceof NextResponse) return resolved;
+  if (resolved) {
+    const pushed = await pushResources(backendFetch, appName, resolved.allocation, resolved.parts, pkg.allowDatabase);
+    if (pushed) return pushed;
+    await saveAllocation(user.id, appName, resolved.allocation, resolved.parts);
+  }
   return registerAppOwner(appName, user);
 }
 

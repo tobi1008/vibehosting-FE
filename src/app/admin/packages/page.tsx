@@ -161,7 +161,7 @@ export default function AdminPackagesPage() {
             Gói hosting
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Giới hạn số project, CPU/RAM mỗi container và database cho từng nhóm user. Gán gói cho user ở trang Users.
+            Tổng tài nguyên của mỗi user: số project, CPU, RAM, dung lượng database. User tự chia cho các project khi tạo. Gán gói cho user ở trang Users.
           </p>
         </div>
         <button
@@ -198,8 +198,8 @@ export default function AdminPackagesPage() {
 
       {packages.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center text-sm text-muted-foreground">
-          Chưa có gói nào. User đang dùng gói dựng sẵn &quot;Cơ bản&quot; (3 project, 500m CPU, 512 MiB RAM, có
-          database 1 GiB). Tạo gói đầu tiên và đánh dấu mặc định để thay thế.
+          Chưa có gói nào. User đang dùng gói dựng sẵn &quot;Cơ bản&quot; (3 project, tổng 1 vCPU, 1 GiB RAM,
+          database 2 GiB). Tạo gói đầu tiên và đánh dấu mặc định để thay thế.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -219,14 +219,14 @@ export default function AdminPackagesPage() {
                   <FolderGit2 className="w-4 h-4 text-muted-foreground" /> Tối đa {pkg.maxProjects} project
                 </li>
                 <li className="flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-muted-foreground" /> {formatCpu(pkg.cpuMillicores)} / container
+                  <Cpu className="w-4 h-4 text-muted-foreground" /> Tổng {formatCpu(pkg.cpuMillicores)}
                 </li>
                 <li className="flex items-center gap-2">
-                  <MemoryStick className="w-4 h-4 text-muted-foreground" /> {formatMemory(pkg.memoryMi)} RAM / container
+                  <MemoryStick className="w-4 h-4 text-muted-foreground" /> Tổng {formatMemory(pkg.memoryMi)} RAM
                 </li>
                 <li className="flex items-center gap-2">
                   <Database className="w-4 h-4 text-muted-foreground" />
-                  {pkg.allowDatabase ? `Database ${pkg.dbStorageGi} GiB` : 'Không có database'}
+                  {pkg.allowDatabase ? `Database tổng ${pkg.dbStorageGi} GiB` : 'Không có database'}
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
                   <Users className="w-4 h-4" /> {pkg._count?.users || 0} user được gán
@@ -290,7 +290,7 @@ export default function AdminPackagesPage() {
                   onChange={(v) => setForm({ ...form, maxProjects: v })}
                 />
                 <NumberField
-                  label="CPU (millicore)"
+                  label="Tổng CPU (millicore)"
                   hint="1000 = 1 vCPU"
                   value={form.cpuMillicores}
                   min={50}
@@ -298,7 +298,7 @@ export default function AdminPackagesPage() {
                   onChange={(v) => setForm({ ...form, cpuMillicores: v })}
                 />
                 <NumberField
-                  label="RAM (MiB)"
+                  label="Tổng RAM (MiB)"
                   hint="1024 = 1 GiB"
                   value={form.memoryMi}
                   min={64}
@@ -316,7 +316,7 @@ export default function AdminPackagesPage() {
               </label>
               {form.allowDatabase && (
                 <NumberField
-                  label="Dung lượng database (GiB)"
+                  label="Tổng dung lượng database (GiB)"
                   value={form.dbStorageGi}
                   min={1}
                   onChange={(v) => setForm({ ...form, dbStorageGi: v })}
@@ -331,8 +331,9 @@ export default function AdminPackagesPage() {
                 <span>Gói mặc định (áp dụng cho user chưa được gán gói và user mới đăng ký)</span>
               </label>
               <p className="text-xs text-muted-foreground">
-                CPU/RAM áp cho từng container của app. Khi lưu, giới hạn mới được áp ngay cho các app đang chạy của user
-                thuộc gói. Dung lượng database chỉ áp cho database tạo mới (ổ đĩa đã cấp không thu nhỏ được).
+                Đây là tổng cho mọi project của user; user chọn mức cho từng project khi tạo và đổi ở tab Cài đặt. Nếu giảm gói
+                xuống dưới mức user đã phân bổ, CPU/RAM của các app được thu nhỏ theo cùng tỉ lệ và áp ngay. Dung lượng database
+                đã cấp không thu nhỏ được.
               </p>
               {formError && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-3 py-2 rounded-md flex items-center gap-2">

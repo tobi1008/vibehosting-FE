@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { backendFetch, requireUser } from '@/lib/backend';
-import { getEffectivePackage, packageSummary } from '@/lib/packages';
+import { allocatedFor, getEffectivePackage, packageSummary } from '@/lib/packages';
 
 /**
  * Tài nguyên đang dùng của user: CPU, RAM, dung lượng database, ổ tạm của từng app, so với gói hosting.
@@ -95,6 +95,13 @@ export async function GET(req: Request) {
 
   const body: Record<string, unknown> = {
     package: { ...packageSummary(pkg), usedProjects: mine.length },
+    // Tổng của gói và phần user đã phân bổ cho các project (khác với mức đang dùng thật đo từ K3s)
+    allocation: pkg.unlimited
+      ? null
+      : {
+          total: { cpuMillicores: pkg.cpuMillicores, memoryMi: pkg.memoryMi, dbStorageGi: pkg.allowDatabase ? pkg.dbStorageGi : 0 },
+          allocated: await allocatedFor(user.id),
+        },
     totals: totals(mine.map((a) => a.usage).filter(Boolean) as AppUsage[]),
     apps: mine,
     measured_at: data.measured_at || null,
