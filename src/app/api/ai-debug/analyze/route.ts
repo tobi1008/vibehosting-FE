@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         component,
         user_note,
         auto_apply,
+        user_id: access.id, // để Vibe Core dùng đúng key AI riêng của người yêu cầu
         ...(ai_provider ? { ai_provider } : {}),
       }),
     });

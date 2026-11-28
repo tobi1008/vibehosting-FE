@@ -49,7 +49,7 @@ export function useAiProvider() {
     // 1. Initial read from localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && CONFIG_ENGINE_IDS.includes(saved)) {
+      if (saved && (CONFIG_ENGINE_IDS.includes(saved) || saved.startsWith('byo:'))) {
         setSelectedProviderState(saved);
       } else if (saved) {
         localStorage.removeItem(STORAGE_KEY);
@@ -80,7 +80,11 @@ export function useAiProvider() {
           }
           setProviders(mergedProviders);
           const saved = localStorage.getItem(STORAGE_KEY);
-          if (!saved && data.default) {
+          if (saved && saved.startsWith('byo:') && !mergedProviders.some((p) => p.id === saved)) {
+            // Key AI riêng đã bị xóa: quay về engine mặc định
+            localStorage.removeItem(STORAGE_KEY);
+            setSelectedProviderState(data.default || 'agy');
+          } else if (!saved && data.default) {
             setSelectedProviderState(data.default);
           }
         }

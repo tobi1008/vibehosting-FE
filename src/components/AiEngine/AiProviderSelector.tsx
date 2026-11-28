@@ -38,6 +38,18 @@ export function getProviderVisual(id: string) {
       shortName: 'Claude Code',
     };
   }
+  if (id.startsWith('byo:')) {
+    return {
+      icon: <Zap className="w-4 h-4" />,
+      dotColor: 'bg-violet-500 dark:bg-violet-400',
+      iconContainer: 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/25',
+      badgeClass: 'bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/25',
+      selectedCard: 'border-violet-500/60 bg-violet-500/5 shadow-xs ring-1 ring-violet-500/30',
+      activeCheck: 'text-violet-600 dark:text-violet-400',
+      shortTag: 'Key riêng',
+      shortName: 'Key AI của bạn',
+    };
+  }
   if (id === 'hermes') {
     return {
       icon: <Bot className="w-4 h-4" />,

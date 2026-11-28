@@ -26,9 +26,42 @@ export const DEFAULT_AI_PROVIDERS = [
   },
 ];
 
+type ByoCredential = {
+  engine: string;
+  provider_name: string;
+  label: string;
+  model: string;
+  is_default: boolean;
+};
+
+/** Engine hệ thống + các key AI riêng của user (id "byo:<id>") để chọn khi triển khai và AI debug */
 export async function GET() {
   const user = await requireUser();
   if (user instanceof NextResponse) return user;
+  const base = await systemProviders();
+  const data = await base.json();
+  try {
+    const res = await backendFetch(`/api/ai-credentials?user_id=${encodeURIComponent(user.id)}`, { cache: 'no-store' });
+    if (res.ok) {
+      const creds: ByoCredential[] = (await res.json()).credentials || [];
+      data.providers = [
+        ...(data.providers || []),
+        ...creds.map((c) => ({
+          id: c.engine,
+          name: `Key của bạn: ${c.label}`,
+          badge: c.is_default ? 'Key riêng – mặc định' : 'Key riêng',
+          description: `${c.provider_name} · ${c.model} (gọi bằng API key của bạn)`,
+          models: [c.model],
+        })),
+      ];
+    }
+  } catch (err) {
+    console.warn('Không tải được key AI riêng của user:', err);
+  }
+  return NextResponse.json(data);
+}
+
+async function systemProviders(): Promise<NextResponse> {
 
   try {
 

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import TelegramLinkCard from '@/components/TelegramLinkCard';
 import TelegramBotSettings from '@/components/TelegramBotSettings';
 import PackageCard from '@/components/PackageCard';
+import AiCredentialsCard from '@/components/AiCredentialsCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound,
@@ -373,6 +374,7 @@ export default function ProfilePage() {
         {/* Right Column: GitHub Integration & Repositories */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <PackageCard />
+          <AiCredentialsCard />
 
           {/* Hermes trên Telegram: admin cấu hình bot, mọi người dùng liên kết tài khoản */}
           {profile?.role === 'admin' && <TelegramBotSettings onChange={() => setTelegramRefresh((n) => n + 1)} />}

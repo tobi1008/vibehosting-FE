@@ -66,7 +66,7 @@ export async function requireAppNameAvailable(appName: string): Promise<AuthUser
   if (!appName) {
     return NextResponse.json({ error: 'Thiếu tên ứng dụng' }, { status: 400 });
   }
-  if (user.role === 'admin') return user;
+  if (user.role === 'admin') return registerAppOwner(appName, user);
 
   const takenByOther = await prisma.project.findFirst({
     where: { app_name: appName, NOT: { userId: user.id } },
@@ -82,5 +82,26 @@ export async function requireAppNameAvailable(appName: string): Promise<AuthUser
   if (quota) return quota;
   const pushed = await pushResources(backendFetch, appName, pkg);
   if (pushed) return pushed;
+  return registerAppOwner(appName, user);
+}
+
+/**
+ * Báo Vibe Core ai là chủ app trước khi triển khai: key AI riêng ("byo:<id>") chỉ dùng được cho app
+ * khi key thuộc đúng chủ này (luồng upload file nén gọi thẳng Vibe Core nên không tin user_id từ trình duyệt).
+ */
+async function registerAppOwner(appName: string, user: AuthUser): Promise<AuthUser | NextResponse> {
+  try {
+    const res = await backendFetch(`/api/apps/${encodeURIComponent(appName)}/owner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return NextResponse.json({ error: `Không đăng ký được chủ ứng dụng: ${data?.detail || res.statusText}` }, { status: 502 });
+    }
+  } catch (e) {
+    return NextResponse.json({ error: `Không kết nối được Vibe Core: ${(e as Error).message}` }, { status: 502 });
+  }
   return user;
 }
