@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { AiProviderSelector } from '@/components/AiEngine/AiProviderSelector';
 import { useAiProvider } from '@/lib/useAiProvider';
+import AgentSessionCard from '@/components/AiDebug/AgentSessionCard';
 
 export interface DebugAction {
   action_type: 'set_env' | 'exec_pod' | 'edit_file' | 'restart_deployment' | 'restart' | string;
@@ -68,6 +69,9 @@ export interface ChatHistoryItem {
   role: 'user' | 'assistant';
   content: string;
   timestamp?: string;
+  /** Tin trả lời của chế độ Agent: hiện kết quả phiên (diff, nút Áp dụng) thay cho văn bản */
+  agentSessionId?: string;
+  autoApply?: boolean;
 }
 
 interface AiDebugTabProps {
@@ -141,6 +145,9 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  // Chế độ Agent: AI được đọc/sửa code và file K3s trên bản sao mã nguồn, người dùng duyệt diff rồi mới áp dụng
+  const [agentMode, setAgentMode] = useState(false);
+  const [agentAutoApply, setAgentAutoApply] = useState(false);
   const chatMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll Terminal
@@ -390,6 +397,49 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
 
     // Send history with only { role, content } according to API contract
     const apiHistory = chatHistory.map(({ role, content }) => ({ role, content }));
+
+    if (agentMode) {
+      try {
+        if (selectedAiProvider.startsWith('byo:')) {
+          throw new Error('Chế độ Agent cần Google Antigravity hoặc Claude Code (key riêng chỉ trả lời, không sửa được file).');
+        }
+        const res = await fetch('/api/ai-debug/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_name: appName,
+            component: component === 'all' ? 'be' : component,
+            message: msgToSend,
+            history: apiHistory,
+            ai_provider: selectedAiProvider,
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || 'Không bắt đầu được phiên agent');
+        setChatHistory([
+          ...updatedHistory,
+          {
+            role: 'assistant',
+            content: 'Phiên agent',
+            agentSessionId: data.session.id,
+            autoApply: agentAutoApply,
+            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      } catch (err) {
+        setChatHistory([
+          ...updatedHistory,
+          {
+            role: 'assistant',
+            content: `❌ ${(err as Error)?.message || 'Không bắt đầu được phiên agent'}`,
+            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      } finally {
+        setIsChatLoading(false);
+      }
+      return;
+    }
 
     try {
       const res = await fetch('/api/ai-debug/chat', {
@@ -1142,8 +1192,22 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Online" />
                 </div>
                 <span className="text-[11px] text-muted-foreground font-mono">
-                  Target: {appName} ({component.toUpperCase()}) • Tự động đọc lại Pod logs mỗi lượt chat
+                  Target: {appName} ({component.toUpperCase()}) •{' '}
+                  {agentMode ? 'Agent sửa code/K3s trên bản sao, bạn duyệt diff' : 'Tự động đọc lại Pod logs mỗi lượt chat'}
                 </span>
+                <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                  <label className="flex items-center gap-1.5 text-[11px] text-foreground cursor-pointer">
+                    <input type="checkbox" checked={agentMode} onChange={(e) => setAgentMode(e.target.checked)} />
+                    <span className="font-semibold">Chế độ Agent</span>
+                    <span className="text-muted-foreground">(được sửa code &amp; file K3s)</span>
+                  </label>
+                  {agentMode && (
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                      <input type="checkbox" checked={agentAutoApply} onChange={(e) => setAgentAutoApply(e.target.checked)} />
+                      Tự áp dụng khi xong
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1197,9 +1261,13 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                       {item.timestamp && <span>{item.timestamp}</span>}
                     </div>
 
-                    <div className="whitespace-pre-wrap font-sans text-xs leading-relaxed">
-                      {item.content}
-                    </div>
+                    {item.agentSessionId ? (
+                      <AgentSessionCard appName={appName} sessionId={item.agentSessionId} autoApply={item.autoApply} />
+                    ) : (
+                      <div className="whitespace-pre-wrap font-sans text-xs leading-relaxed">
+                        {item.content}
+                      </div>
+                    )}
                   </div>
 
                   {isUser && (
@@ -1220,7 +1288,9 @@ export function AiDebugTab({ appName, onOpenLogs }: AiDebugTabProps) {
                 <div className="bg-card border border-border rounded-2xl rounded-tl-xs p-3.5 text-xs text-muted-foreground flex items-center gap-2 shadow-xs">
                   <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
                   <span className="text-foreground font-medium animate-pulse">
-                    AI DevOps Agent đang đọc log Pod mới nhất và suy luận câu trả lời...
+                    {agentMode
+                      ? 'Đang chuẩn bị bản sao mã nguồn cho agent...'
+                      : 'AI DevOps Agent đang đọc log Pod mới nhất và suy luận câu trả lời...'}
                   </span>
                 </div>
               </div>
